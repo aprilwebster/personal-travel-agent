@@ -18,12 +18,14 @@
     <!-- App header, fixed position, fixed size -->
     <header id="dialog-header" class="dialog-header-{{dialogCtrl.state.class}} navbar navbar-fixed-top">
         <div class="dialog-header-inner">
+        	<!--
             <favorite-indicator class="{{favoriteIndicatorClass}}">
                 <div class="dialog-toggle-favorites-view" 
                      ng-click="dialogCtrl.toggleFavoritesPanel()"
                      style="{{(dialogCtrl.getFavorites() != null && dialogCtrl.getFavorites().length > 0) ? 'cursor: pointer' : ''}}">
                 </div>
             </favorite-indicator>
+              -->
             <div class="dialog-navbar-txt-img" onclick="location.reload();">
                 <div class="dialog-navbar-img"></div>
             </div>
@@ -43,16 +45,22 @@
         <preview class="dialog-preview" content="dialogCtrl.selectedMovie"></preview>
     </div>
     <!--mobile favorites -->
+    
+    <!-- 
     <div class="dialog-full-screen-favorites" 
             ng-if="dialogCtrl.state.key != 'intro' && dialogCtrl.showFavorites && (dialogCtrl.getFavorites() != null && dialogCtrl.getFavorites().length > 0)" 
             ng-include="'modules/dialog-full-screen-favorites.html'">
         
     </div>
+    -->
+
 
     <!--desktop favorites-->
+    <!--  
     <div class="dialog-favorites-sidebar-parent" 
             ng-if="dialogCtrl.state.key != 'intro'"
             ng-include="'modules/dialog-sidebar-favorites.html'"></div>
+    -->
 
     <!--footer, user entry field -->
     <footer class="footer-{{dialogCtrl.state.class}}" id="dialog-footer">

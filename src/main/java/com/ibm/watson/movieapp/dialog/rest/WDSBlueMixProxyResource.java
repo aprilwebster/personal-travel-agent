@@ -15,14 +15,22 @@
 
 package com.ibm.watson.movieapp.dialog.rest;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -34,11 +42,14 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpException;
 import org.apache.http.client.ClientProtocolException;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import com.ibm.watson.developer_cloud.dialog.v1.DialogService;
 import com.ibm.watson.developer_cloud.dialog.v1.model.Conversation;
 import com.ibm.watson.developer_cloud.dialog.v1.model.NameValue;
@@ -46,9 +57,19 @@ import com.ibm.watson.developer_cloud.natural_language_classifier.v1.NaturalLang
 import com.ibm.watson.developer_cloud.natural_language_classifier.v1.model.Classification;
 import com.ibm.watson.developer_cloud.natural_language_classifier.v1.model.ClassifiedClass;
 import com.ibm.watson.movieapp.dialog.exception.WatsonTheatersException;
+import com.ibm.watson.movieapp.dialog.payload.LatLongPayload;
 import com.ibm.watson.movieapp.dialog.payload.MoviePayload;
 import com.ibm.watson.movieapp.dialog.payload.ServerErrorPayload;
 import com.ibm.watson.movieapp.dialog.payload.WDSConversationPayload;
+import com.ibm.watson.movieapp.utilities.Similarity;
+import com.ibm.watson.movieapp.webservices.googlemaps.GoogleMapsProxyResource;
+import com.ibm.watson.movieapp.webservices.twitter.TwitterAnalyzer;
+import com.ibm.watson.movieapp.webservices.watson.WatsonEmotionServiceProxyResource;
+
+
+// Importing PI eclipse project to get a personality profile given a twitter handle
+//import com.ibm.watson.personalityinsights.sample.twitter.TwitterAnalyzer;
+
 
 /**
  * <p>
@@ -67,23 +88,20 @@ import com.ibm.watson.movieapp.dialog.payload.WDSConversationPayload;
 @Path("/bluemix")
 public class WDSBlueMixProxyResource {
     private static String wds_base_url;
-    private static String nlc_base_url;
     private static DialogService dialogService = null;
-    private static NaturalLanguageClassifier nlcService = null;
     private static String dialog_id;
     private static String classifier_id;
     private static String username_dialog = null;
     private static String password_dialog = null;
-    private static String username_nlc = null;
-    private static String password_nlc = null;
-    private static String personalized_prompt_movie_selected = "USER CLICKS BOX"; //$NON-NLS-1$
-    private static String personalized_prompt_movies_returned = "UPDATE NUM_MOVIES"; //$NON-NLS-1$
-    private static String personalized_prompt_current_index = "UPDATE CURRENT_INDEX"; //$NON-NLS-1$
-
+    private static String walking_distance = "walking distance";
+    
+    private static Boolean DEBUG = true;
+    
+    
+    
     static {
         loadStaticBluemixProperties();
         useDialogServiceInstance();
-        useClassifierServiceInstance();
     }
 
     /**
@@ -112,22 +130,7 @@ public class WDSBlueMixProxyResource {
                 }
             }
 
-            // Get credentials for Natural Language Classifier Service
-            services = new JsonParser().parse(envServices).getAsJsonObject();
-            arr = (JsonArray) services.get("natural_language_classifier"); //$NON-NLS-1$
-            if (arr != null && arr.size() > 0) {
-                services = arr.get(0).getAsJsonObject();
-                JsonObject credentials = services.get("credentials").getAsJsonObject(); //$NON-NLS-1$
-                nlc_base_url = credentials.get("url").getAsString(); //$NON-NLS-1$
-                if (credentials.get("username") != null && !credentials.get("username").isJsonNull()) { //$NON-NLS-1$ //$NON-NLS-2$
-                    username_nlc = credentials.get("username").getAsString(); //$NON-NLS-1$
-                    UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.FOUND_NLC_USERNAME")); //$NON-NLS-1$
-                }
-                if (credentials.get("password") != null && !credentials.get("password").isJsonNull()) { //$NON-NLS-1$ //$NON-NLS-2$
-                    password_nlc = credentials.get("password").getAsString(); //$NON-NLS-1$
-                    UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.FOUND_NLC_PASSWORD")); //$NON-NLS-1$
-                }
-            }
+ 
         } else {
             UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.VCAP_SERVICES_CANNOT_LOAD")); //$NON-NLS-1$
         }
@@ -141,14 +144,6 @@ public class WDSBlueMixProxyResource {
             UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_FAIL")); //$NON-NLS-1$
         }
 
-        // Get the classifier_id
-        envServices = System.getenv("CLASSIFIER_ID"); //$NON-NLS-1$
-        if (envServices != null) {
-            classifier_id = envServices;
-            UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.CLASSIFIER_ID_SUCCESS")); //$NON-NLS-1$
-        } else {
-            UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.CLASSIFIER_ID_FAIL")); //$NON-NLS-1$
-        }
     }
 
     /**
@@ -165,19 +160,6 @@ public class WDSBlueMixProxyResource {
     }
 
     /**
-     * Sets the values of the classifier-specific variables if specified
-     */
-    private static void useClassifierServiceInstance(){
-        if (username_nlc != null && password_nlc != null) {
-            nlcService = new NaturalLanguageClassifier();
-            nlcService.setUsernameAndPassword(username_nlc, password_nlc);
-            nlcService.setEndPoint(nlc_base_url);
-        }else{
-            UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.NLC_CREDENTIALS_EMPTY"));
-        }
-    }
-
-    /**
      * Checks and extracts movie parameters sent by WDS
      * <p>
      * This will extract movie parameters sent by WDS (in the response text) when they're sent.
@@ -185,28 +167,78 @@ public class WDSBlueMixProxyResource {
      * 
      * @param wdsResponseText the textual part of the response sent by WDS
      * @return the JsonObject containing the response from WDS as well as the parameters and their values sent by WDS.
+     * @throws org.json.simple.parser.ParseException 
      */
-    public JsonObject matchSearchNowPattern(String wdsResponseText) {
-        JsonObject result = new JsonObject();
+    public JsonObject matchSearchNowPattern(String wdsResponseText) throws org.json.simple.parser.ParseException {
+        
         // If WDS wants us to search themoviedb then it will return a JSON
         // payload within the response. Quickly check the response for a specific token
-        int idx = wdsResponseText.toLowerCase().indexOf("{search_now:"); //$NON-NLS-1$
+    	//int idx = wdsResponseText.toLowerCase().indexOf("{search_now:"); //$NON-NLS-1$
+        int idx = wdsResponseText.toLowerCase().indexOf("{\"search_now\":"); //$NON-NLS-1$
+        
+        //String testText = wdsResponseText;
+        //System.out.println("DEBUG matchSearchNowPattern: " + testText);
+        //testText.replaceAll(" How can I help you?", "");
+        //System.out.println("DEBUG matchSearchNowPattern: " + testText);
+        
+        /*
+        Pattern pattern = Pattern.compile("How can I help you?");
+        Matcher matcher = pattern.matcher(wdsResponseText);
+        if (matcher.find())
+        {
+            System.out.println(matcher.group(0));
+        }
+        */
+        //JSONObject result = new JSONObject();
+        JsonObject result = new JsonObject();
         if (idx != -1) {
             // token exists, parse out some extra chars from dialog.
-            String json = wdsResponseText.substring(idx).trim();
+            String jsonString = wdsResponseText.substring(idx).trim();
             wdsResponseText = wdsResponseText.substring(0, idx - 1).trim();
-            if (json.startsWith("\"")) { //$NON-NLS-1$
-                json = json.substring(0);
+            if (jsonString.startsWith("\"")) { //$NON-NLS-1$
+            	jsonString = jsonString.substring(0);
             }
-            if (json.endsWith("\"")) { //$NON-NLS-1$
-                json = json.substring(0, json.length() - 1);
+            if (jsonString.endsWith("\"")) { //$NON-NLS-1$
+            	jsonString = jsonString.substring(0, jsonString.length() - 1);
             }
-            JsonElement element = new JsonParser().parse(json);
-            result.add("Params", element.getAsJsonObject()); //$NON-NLS-1$
+            System.out.println("DEBUG matchSearchPatternNow: wds response is " + jsonString);
+            System.out.println("DEBUG matchSearchPatternNow: wds response type is " + jsonString.getClass().getName());
+            
+            String trimmedString = jsonString.trim();
+            System.out.println("DEBUG: trimmed String is " + trimmedString);
+            
+            String newline = System.getProperty("line.separator");
+    		boolean hasNewline = jsonString.contains(newline);
+    		System.out.println("DEBUG PersonalityInsightsHelper: " + hasNewline);
+            
+            
+            //JSONParser parser = new JSONParser();
+            JsonParser parser = new JsonParser();
+            
+            //Object obj = parser.parse(jsonString);
+            //System.out.println("DEBUG matchSearchPatternNow: output of Parser parsing jsonString is " + obj.toString());
+            //JsonElement test = (JsonElement)parse.parse(jsonString;)
+            
+
+            
+            //JsonObject jsonObject = (JsonObject) parser.parse(jsonString);
+            JsonObject jsonObject = (JsonObject) parser.parse(trimmedString);
+            System.out.println("DEBUG matchSearchPatternNow: " + jsonObject.toString());
+            
+            System.out.println(jsonObject.entrySet());
+            result.add("Params",jsonObject);
+            
+            
+
+            
         }
+        
         result.addProperty("WDSMessage", wdsResponseText); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        //result.put("WDSMessage", wdsResponseText);
         return result;
     }
+    
+    
 
     /**
      * Makes chat conversation with WDS
@@ -234,12 +266,15 @@ public class WDSBlueMixProxyResource {
     @Path("/postConversation")
     @Produces(MediaType.APPLICATION_JSON)
     public Response postConversation(@QueryParam("conversationId") String conversationId, @QueryParam("clientId") String clientId,
-            @QueryParam("input") String input) {
+            @QueryParam("input") String input) throws Exception {
         long lStartTime = System.nanoTime();
         long lEndTime, difference;
         String errorMessage = null, issue = null;
         String wdsMessage = null;
         JsonObject processedText = null;
+        //JSONObject processedText = null;
+        
+        // Input is null
         if (input == null || input.trim().isEmpty()) {
             errorMessage = Messages.getString("WDSBlueMixProxyResource.SPECIFY_INPUT"); //$NON-NLS-1$
             issue = Messages.getString("WDSBlueMixProxyResource.EMPTY_QUESTION"); //$NON-NLS-1$
@@ -248,40 +283,45 @@ public class WDSBlueMixProxyResource {
         }
         try {
 
-            // 1.Get all the class info from NLC and set appropriate profile variables.
-            List<ClassifiedClass> classInfo = null;
-            if(nlcService != null){
-                if (UtilityFunctions.logger.isTraceEnabled()) {
-                    UtilityFunctions.logger.trace(Messages.getString("WDSBlueMixProxyResource.NLC_SERVICE")); //$NON-NLS-1$
-                }
-                // Send utterance to NLC to get user intent
-                Classification classification = nlcService.classify(classifier_id, input);
-                classInfo = classification.getClasses();
-                // Set classification profile variables for WDS.
-                List<NameValue> nameValues = new ArrayList<NameValue>();
-                nameValues.add(new NameValue("Class1", classInfo.get(0).getName()));
-                nameValues.add(new NameValue("Class1_Confidence", Double.toString(classInfo.get(0).getConfidence())));
-                nameValues.add(new NameValue("Class2", classInfo.get(1).getName()));
-                nameValues.add(new NameValue("Class2_Confidence", Double.toString(classInfo.get(1).getConfidence())));
-                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
-            }
-
-            // 2. Send original utterance to WDS
-            Map<String, Object> converseParams = new HashMap<String, Object>();
-            converseParams.put("dialog_id", dialog_id);
-            converseParams.put("client_id", Integer.parseInt(clientId));
-            converseParams.put("conversation_id", Integer.parseInt(conversationId));
-            converseParams.put("input", input);
+            
+            Map<String, Object> converseParams = createConversationParameterMap(dialog_id,
+            		Integer.parseInt(clientId),Integer.parseInt(conversationId),input);
             Conversation conversation = dialogService.converse(converseParams);
             wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+            
+            System.out.println("DEBUG: response from WDS" + wdsMessage);
+            
+            
+       
+            
+            
             processedText = matchSearchNowPattern(wdsMessage);
+            System.out.println("DEBUG PROCESSED TEXT: " + processedText);
+            String wds = processedText.get("WDSMessage").toString();
+            String cleanedWds = wds.replace("\"", "");
+            
+            if (!cleanedWds.trim().isEmpty()) {
+            	System.out.println("DEBUG WDSBlueMixProxyResource: wds is " + wds);
+            	System.out.println("DEBUG WDSBlueMixProxyResource: cleaned wds is " + cleanedWds);
+            	Double anger = getAnger(cleanedWds);
+            	System.out.println("DEBUG WDSBlueMixProxyResource: ANGER LEVEL in client's conversation turn " + anger.toString());
+            }
+            
+            
+            
             WDSConversationPayload conversationPayload = new WDSConversationPayload();
-            if (!processedText.has("Params")) { //$NON-NLS-1$
+            
+            
+            if (!processedText.has("Params")) {
+            //if (!processedText.containsKey("Params")) {
                 // We do not have enough info to search the movie db, go back to the user for more info.
-                conversationPayload.setClientId(clientId); //$NON-NLS-1$
+
+            	conversationPayload.setClientId(clientId); //$NON-NLS-1$
                 conversationPayload.setConversationId(clientId); //$NON-NLS-1$
                 conversationPayload.setInput(input); //$NON-NLS-1$
                 conversationPayload.setWdsResponse(processedText.get("WDSMessage").getAsString()); //$NON-NLS-1$
+                //conversationPayload.setWdsResponse(processedText.get("WDSMessage").toString()); //$NON-NLS-1$
+                
                 if (UtilityFunctions.logger.isTraceEnabled()) {
                     // Log the execution time.
                     lEndTime = System.nanoTime();
@@ -289,210 +329,356 @@ public class WDSBlueMixProxyResource {
                     UtilityFunctions.logger.trace("Throughput: " + difference/1000000 + "ms.");
                 }
                 return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
-            } else {
-                // Dialog says we have enough info to proceed with a search of themoviedb..
-                // Find out search variables.
-                JsonObject paramsObj = processedText.getAsJsonObject("Params"); //$NON-NLS-1$
-                boolean newSearch = false, prevSearch = false, nextSearch = false, repeatSearch = false;
-                String page = paramsObj.get("Page").getAsString(); //$NON-NLS-1$
-                switch (page) {
-                case "new":newSearch = true; //$NON-NLS-1$
-                    break;
-                case "next":nextSearch = true; //$NON-NLS-1$
-                    break;
-                case "previous":prevSearch = true; //$NON-NLS-1$
-                    break;
-                case "repeat":repeatSearch = true; //$NON-NLS-1$
-                    break;
-                default:
-                    errorMessage = Messages.getString("WDSBlueMixProxyResource.DIALOG_UNDERSTAND_FAIL"); //$NON-NLS-1$
-                    issue = Messages.getString("WDSBlueMixProxyResource.PAGE_TYPE_NOT_UNDERSTOOD"); //$NON-NLS-1$
-                    UtilityFunctions.logger.error(issue);
-                }
-
-                if (UtilityFunctions.logger.isTraceEnabled()) {
-                    UtilityFunctions.logger.trace(Messages.getString("WDSBlueMixProxyResource.WDS_RESPONSE") + paramsObj); //$NON-NLS-1$
-                }
+            } 
+            
+            // PARAMETERS ARE FOUND IN THE WDS RESPONSE - there's a query to execute
+            else {
+                // Extract the query parameters from the processed WDS Response
+                JsonObject paramsObj = processedText.getAsJsonObject("Params"); 
+            	//JSONObject paramsObj = (JSONObject) processedText.get("Params"); 
+                System.out.println("DEBUG WDSBlueMixProxyResource: query parameters are " + paramsObj);
+                
+                // If the query parameters include a clothing store preference variable, the query is a X	
+            	// Refactor these variable names!! - the aren't descriptive enough	
                 String prompt;
-                Integer currentIndex = Integer.parseInt(paramsObj.get("Index").getAsString()); //$NON-NLS-1$
-                Integer numMovies = 0;
-                Integer totalPages = 0;
-                boolean tmdbCallNeeded = true;
                 List<NameValue> nameValues;
-                if(paramsObj.has("Total_Movies")){
-                    numMovies = Integer.parseInt(paramsObj.get("Total_Movies").getAsString());
-                    totalPages = Integer.parseInt(paramsObj.get("Total_Pages").getAsString());
-                    // If the user wishes to "go back" when the first set of results is displayed or
-                    // "show more" results when all results have been displayed already---> do not need to make a call to themoviedb.org
-                    tmdbCallNeeded = !((currentIndex <= 10 && prevSearch) || (currentIndex == numMovies && nextSearch));
-                }
-                if(tmdbCallNeeded){
-                    // Need to make a call to TMDB.
-                    int pageNum = (int) Math.ceil((float) currentIndex / 20);// round up.. 10/20 = .5 == page# 1
-                    if ((nextSearch || newSearch) && (currentIndex % 20) == 0) {
-                        pageNum++;
-                    }
+                
+                
+                // PERSONALITY PROFILE QUERY - If the query parameters include a twitter handle, the query is a personality insights query
+                if(paramsObj.has("Twitter_Handle")){
+                //if(paramsObj.containsKey("Twitter_Handle")){
+                	System.out.println("DEBUG WDSBlueMixProxyResource: query parameters include a Twitter_Handle");
+                	String twitterHandle = paramsObj.get("Twitter_Handle").getAsString();
+                	//String twitterHandle = paramsObj.get("Twitter_Handle").toString();
+	                System.out.println("DEBUG WDSBlueMixProxyResource: twitter handle is " + twitterHandle);
+                    
+	                // Get the personality profile - call the Twitter Analyzer
+	                String personalityProfile = "";
+	                //JSONObject personalityProfile = new JSONObject();
+	                TwitterAnalyzer twitterAnalyzer = new TwitterAnalyzer();  
+            		try {
+            			personalityProfile = twitterAnalyzer.getPersonalityProfile(twitterHandle);
+            			//personalityProfile = twitterAnalyzer.getPersonalityProfile("@Adele");
+            		} 
+            		catch (Exception e1) {
+            			// TODO Auto-generated catch block
+            			e1.printStackTrace();
+            		}
+            		
+            		System.out.println("DEBUG: " + personalityProfile.getClass().getName());
+            		System.out.println("DEBUG WDSBlueMixProxyResource: the personality profile is " + personalityProfile);
+            		
+            		
+            		// Issue updateProfile request to the WDS to update the profile variable - Personality Profile - for the client/dialog
+	                // TODO: use a better variable name that nameValues - not descriptive at all
+	                nameValues = new ArrayList<NameValue>();
+	                nameValues.add(new NameValue("Personality_Profile", personalityProfile)); //$NON-NLS-1$
+	                //nameValues.add(new NameValue("Personality_Profile", personalityProfile.toJSONString()));
+	                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
+	                System.out.println("DEBUG: profile variable Personality_Profile update request sent to WDS");
+	                
+	              
+	                // Change variable name for prompt - it's not the correct concept - not descriptive enough!!
+	                prompt="UPDATE_PERSONALITY_PROFILE";
+	                converseParams = createConversationParameterMap(dialog_id,Integer.parseInt(clientId),Integer.parseInt(conversationId),prompt);
+	                conversation = dialogService.converse(converseParams);
+	                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+	
+	                // Build the payload - wdsResponse?
+	                conversationPayload.setWdsResponse(wdsMessage);
+	                conversationPayload.setClientId(clientId); 
+	                conversationPayload.setConversationId(clientId); 
+	                conversationPayload.setInput(input); 
+	
+	                // Removed the logger from here - add it back in later on
 
-                    // Decrement page num. eg.: currentIndex = 30, 23, etc. Do not decrement page num for currentIndex = 20, 36, etc.
-                    if (prevSearch && (currentIndex % 20 <= 10 && (currentIndex % 20 != 0))) {
-                        pageNum--;
-                    }
+	                // Return to UI.
+	                return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();	
+            		
+            		
+            		
+                } // END PERSONALITY PROFILE QUERY
+            	
+                
 
-                    int currentDisplayCount = (currentIndex % 10 == 0) ? 10 : currentIndex % 10;   
-                    SearchTheMovieDbProxyResource tmdb = new SearchTheMovieDbProxyResource();
-                    conversationPayload = tmdb.discoverMovies(UtilityFunctions.getPropValue(paramsObj, "Genre"),  //$NON-NLS-1$
-                            UtilityFunctions.getPropValue(paramsObj, "Rating"),  //$NON-NLS-1$
-                            UtilityFunctions.getPropValue(paramsObj, "Recency"),  //$NON-NLS-1$
-                            currentIndex, pageNum, nextSearch || newSearch);
-                    int size = conversationPayload.getMovies().size();
-                    if (prevSearch) {
-                        currentIndex -= currentDisplayCount;
-                    } else if (nextSearch || newSearch) {
-                        currentIndex += size;
-                    }
+                // MATCHING CLOTHING STORE QUERY
+                if(paramsObj.has("Personality_Profile")){
+                //if(paramsObj.containsKey("Personality_Profile")){
+	                System.out.println("DEBUG: query param is Personality_Profile, so do a Clothing Store Match query.");
 
-                    nameValues = new ArrayList<NameValue>();
-                    // Save the number of movies displayed till now.
-                    nameValues.add(new NameValue("Current_Index", currentIndex.toString())); //$NON-NLS-1$
-                    // Save the total number of pages in a profile variable.
-                    nameValues.add(new NameValue("Total_Pages", conversationPayload.getTotalPages().toString())); //$NON-NLS-1$
-                    // Save the total number of movies in Num_Movies.
-                    nameValues.add(new NameValue("Num_Movies", conversationPayload.getNumMovies().toString())); //$NON-NLS-1$
-                    // Set the profile variables.
-                    dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
-                }
-                if(!tmdbCallNeeded){
-                    // Set the value of the Index_Updated profile variable to No so that WDS knows that no indices were updated.
-                    nameValues = new ArrayList<NameValue>();
-                    nameValues.add(new NameValue("Index_Updated", "No"));
-                    dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
-                    // Set some values in the ConversationPayload which are needed by the UI.
-                    List <MoviePayload> movies = new ArrayList<MoviePayload>();
-                    conversationPayload.setMovies(movies);
-                    conversationPayload.setNumMovies(numMovies);
-                    conversationPayload.setTotalPages(totalPages);
-                }
-                // If first time, get personalized prompt based on Num_Movies
-                prompt = personalized_prompt_current_index;
-                if (newSearch || repeatSearch) {
-                    prompt = personalized_prompt_movies_returned;
-                }
-                // Get the personalized prompt.
-                converseParams = new HashMap<String, Object>();
-                converseParams.put("dialog_id", dialog_id);
-                converseParams.put("client_id", Integer.parseInt(clientId));
-                converseParams.put("conversation_id", Integer.parseInt(conversationId));
-                converseParams.put("input", prompt);                
-                conversation = dialogService.converse(converseParams);
-                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+	                String personalityProfile = paramsObj.get("Personality_Profile").toString();
+	                System.out.println("DEBUG: personality profile is " + personalityProfile);
+	                
+	                
+	                String matchingStore = "";
+	                matchingStore = new Similarity().getClosestMatchingStore(personalityProfile);
+	                System.out.println("DEBUG: matching store from Similarity.getClosestMatchingStore is " + matchingStore);
+	                
+			        
+			        // Issue updateProfile request to the WDS to update the profile variable - Clothing_Store_Location - for the client/dialog
+	                nameValues = new ArrayList<NameValue>();
+	                nameValues.add(new NameValue("Clothing_Store_Preference", matchingStore)); //$NON-NLS-1$
+	                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
+	                System.out.println("DEBUG: after call to dialogService");
+	                
+	              
+	                // Send an UPDATE_CLOTHING_STORES request to the WDS
+	                // Change variable name for prompt - it's not the correct concept - not descriptive enough!!
+	                prompt="UPDATE_CS";
+	                converseParams = createConversationParameterMap(dialog_id,Integer.parseInt(clientId),Integer.parseInt(conversationId),prompt);
+	                conversation = dialogService.converse(converseParams);
+	                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+	
+	                // Build the payload - wdsResponse?
+	                conversationPayload.setWdsResponse(wdsMessage);
+	                conversationPayload.setClientId(clientId); 
+	                conversationPayload.setConversationId(clientId); 
+	                conversationPayload.setInput(input); 
+	
+	                // Removed the logger from here - add it back in later on
 
-                // Build the moviePayload.
-                conversationPayload.setWdsResponse(wdsMessage);
-                conversationPayload.setClientId(clientId); //$NON-NLS-1$
-                conversationPayload.setConversationId(clientId); //$NON-NLS-1$
-                conversationPayload.setInput(input); //$NON-NLS-1$
+	                // Return to UI.
+	                return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
 
-                if (UtilityFunctions.logger.isTraceEnabled()) {
-                    // Log the execution time.
-                    lEndTime = System.nanoTime();
-                    difference = lEndTime - lStartTime;
-                    UtilityFunctions.logger.trace("Throughput: " + difference/1000000 + "ms.");
-                }
-                // Return to UI.
-                return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
+                } // END GET MATCHING STORE
+	                
+	       
+	            // Google Maps API Call    
+		        if(paramsObj.has("Clothing_Store") && paramsObj.has("Current_Address")){  
+		        	String clothingStore = paramsObj.get("Clothing_Store").toString();
+		        	String startingAddress = paramsObj.get("Current_Address").toString();
+		        	
+		        	/*
+		        	String distanceString = "";
+		        	String distanceValue = "";
+		        	if(paramsObj.has("Distance")){
+	        			distanceString = paramsObj.get("Distance").toString();
+	        			
+	        			String cleanedDistanceString = distanceString.replace("\"", "");
+	        			
+	        			byte[] distanceByteArray = distanceString.getBytes(Charset.forName("UTF-8"));
+	        			String distanceByteArray_toString = Arrays.toString(distanceByteArray);
+	        			String distanceStringNew = new String(distanceByteArray, Charset.forName("UTF-8"));
+	        			
+	        			if(DEBUG){
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array specified is " + distanceByteArray);
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array converted back to string is " + distanceByteArray_toString);
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array converted back to string to get a string is " + distanceStringNew);
+		        		}
+	        			
+	        			distanceString = distanceString.trim();
+	        			
+	        			byte[] walkingDistanceByteArray = walking_distance.getBytes(Charset.forName("UTF-8"));
+	        			String walkingDistanceByteArray_toString = Arrays.toString(walkingDistanceByteArray);
+	        			String walkingDistanceStringNew = new String(walkingDistanceByteArray, Charset.forName("UTF-8"));
+	        			
+	        			if(DEBUG){
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: walking distance byte array specified is " + walkingDistanceByteArray);
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: walking distance byte array converted back to string is " + walkingDistanceByteArray_toString);
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array converted back to string to get a string is " + walkingDistanceStringNew);
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: cleaned distance specified is " + cleanedDistanceString);
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: distanceString type is " + cleanedDistanceString.getClass().getName());
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: string equals" + cleanedDistanceString.equals(walking_distance));
+		        			System.out.println("DEBUG WDSBlueMixProxyResource: string equals" + cleanedDistanceString.equalsIgnoreCase("walking distance"));
+	        			}
+	        			
+	        			if(cleanedDistanceString.equals("walking distance")){
+	        				distanceValue = "500";
+	        				System.out.println("DEBUG WDSBlueMixProxyResource: walking distance specified.  Distance is " + distanceValue);
+	    	                
+	        			}else{
+	        				distanceValue = "10000";
+	        				System.out.println("DEBUG WDSBlueMixProxyResource: taxi ride specified.  Distance is " + distanceValue);
+	        			}
+	        			//System.out.println("DEBUG after get distance preference");
+	        			System.out.println("DEBUG: distance preferred is " + distanceValue);
+	        		}
+	        		*/
+		        	
+	                System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store requested. Clothing store preference is " + clothingStore);
+	                
+	                
+	                // Get the closest clothing store - call GoogleMaps api
+	                Map<String,Object> closestClothingStore = getClosestClothingStoreObject(startingAddress,clothingStore);
+	                String closestClothingStoreAddress = (String)closestClothingStore.get("address");
+	                System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestClothingStoreAddress);
+	                String distCurrentLocnToClothingStore = getDistance(startingAddress, closestClothingStoreAddress);
+	                System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
+	                
+	                
+	                Map<String,Object> closestGroceryStoreObject = getClosestGroceryStoreAddress(closestClothingStoreAddress);
+	                String groceryStoreName = (String)closestGroceryStoreObject.get("name");
+	                String groceryStoreAddress = (String)closestGroceryStoreObject.get("address");
+	                System.out.println("DEBUG WDSBlueMixProxyResource: closest grocery store is " + groceryStoreName + " and is located at " + groceryStoreAddress);
+	                
+	                
+	                
+	                
+	                // Issue updateProfile request to the WDS to update the profile variable - Clothing_Store_Location - for the client/dialog
+	                
+	                nameValues = new ArrayList<NameValue>();
+	                nameValues.add(new NameValue("Clothing_Store_Location", closestClothingStoreAddress)); //$NON-NLS-1$
+	                nameValues.add(new NameValue("Clothing_Store_Distance", distCurrentLocnToClothingStore));
+	                nameValues.add(new NameValue("Grocery_Store_Name", groceryStoreName));
+	                nameValues.add(new NameValue("Grocery_Store_Address", groceryStoreAddress));
+	                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
+	                System.out.println("DEBUG WDSBlueMixProxyResource: after call to dialogService");
+	                
+	              
+	                // Send an UPDATE_CLOTHING_STORES request to the WDS
+	                // Change variable name for prompt - it's not the correct concept - not descriptive enough!!
+	                prompt="UPDATE_CS_LOCATION";
+	                converseParams = createConversationParameterMap(dialog_id,Integer.parseInt(clientId),Integer.parseInt(conversationId),prompt);
+	                conversation = dialogService.converse(converseParams);
+	                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+	
+	                // Build the payload - wdsResponse?
+	                conversationPayload.setWdsResponse(wdsMessage);
+	                conversationPayload.setClientId(clientId); 
+	                conversationPayload.setConversationId(clientId); 
+	                conversationPayload.setInput(input); 
+	
+	                // Removed the logger from here - add it back in later on
+
+	                // Return to UI.
+	                return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
+                }// END Clothing_Store_Preference query processing and update
             }
-        } catch (ClientProtocolException e) {
-            errorMessage = Messages.getString("WDSBlueMixProxyResource.API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
-            issue = Messages.getString("WDSBlueMixProxyResource.CLIENT_EXCEPTION_IN_GET_RESPONSE"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        } catch (IllegalStateException e) {
+                
+
+        } 
+        catch (IllegalStateException e) {
             errorMessage = Messages.getString("WDSBlueMixProxyResource.API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
             issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_GET_RESPONSE"); //$NON-NLS-1$
             UtilityFunctions.logger.error(issue, e);
-        } catch (IOException e) {
-            errorMessage = Messages.getString("WDSBlueMixProxyResource.API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
-            issue = Messages.getString("WDSBlueMixProxyResource.IO_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        } catch (HttpException e) {
-            errorMessage = Messages.getString("WDSBlueMixProxyResource.TMDB_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
-            issue = Messages.getString("WDSBlueMixProxyResource.HTTP_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        } catch (WatsonTheatersException e) {
-            errorMessage = e.getErrorMessage();
-            issue = e.getIssue();
-            UtilityFunctions.logger.error(issue, e);
-        } catch (URISyntaxException e) {
-            errorMessage = Messages.getString("WDSBlueMixProxyResource.TMDB_URL_INCORRECT"); //$NON-NLS-1$
-            issue = Messages.getString("WDSBlueMixProxyResource.URI_EXCEPTION_IN_DISOVERMOVIE"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        } catch (ParseException e) {
-            errorMessage = Messages.getString("WDSBlueMixProxyResource.TMDB_RESPONSE_PARSE_FAIL"); //$NON-NLS-1$
-            issue = Messages.getString("WDSBlueMixProxyResource.PARSE_EXCEPTION_TMDB_GET"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        }
+        } 
+  
         return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
     }
+    
+    
+    
+ private String TwitterAnalyzer(String string) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
+ 
+ private static Double getAnger(String text) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+	WatsonEmotionServiceProxyResource wesObj = new WatsonEmotionServiceProxyResource();
+	System.out.println("DEBUG WDSBlueMixProxyResource: text to pass to Emotion Service is " + text);
+	
+	if(text.trim().isEmpty()){
+		System.out.println("DEBUG WDSBlueMixProxyResource: text provided to getAnger function is empty");
+	}
+    Double anger = (Double)wesObj.getAnger(text);
+
+    System.out.println("DEBUG WDSBlueMixProxyResource: anger level is " + anger.toString());
+
+ 	return anger;
+	}
+ 
+ 
+/*private String getClosestClothingStoreAddress(String fromAddress, String clothingStore, String distance) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+		GoogleMapsProxyResource gmObj = new GoogleMapsProxyResource();
+		System.out.println("DEBUG WDSBlueMixProxyResource: client starting address address is " + fromAddress);
+		
+	    String closestClothingStoreAddress = gmObj.getClosestLocation(fromAddress, "clothing_store", clothingStore);
+
+	    System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store address is " + closestClothingStoreAddress);
+
+	 	return closestClothingStoreAddress;
+	}
+*/
+private Map<String,Object> getClosestClothingStoreObject(String fromAddress, String clothingStore) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+	GoogleMapsProxyResource gmObj = new GoogleMapsProxyResource();
+	System.out.println("DEBUG WDSBlueMixProxyResource: client starting address address is " + fromAddress);
+	
+    Map<String,Object> closestClothingStoreObject = gmObj.getClosestLocationObject(fromAddress,"clothing_store", clothingStore);
+
+    System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store address is " + closestClothingStoreObject);
+
+ 	return closestClothingStoreObject;
+}
+
+private String getDistance(String fromAddress, String toAddress) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+	GoogleMapsProxyResource gmObj = new GoogleMapsProxyResource();
+	System.out.println("DEBUG WDSBlueMixProxyResource: client starting address address is " + fromAddress);
+	
+    String distance = gmObj.getDistance(fromAddress,toAddress);
+
+    System.out.println("DEBUG WDSBlueMixProxyResource: distance to closest clothing store is  " + distance);
+
+ 	return distance;
+}
+
+
+private Map<String,Object> getClosestGroceryStoreAddress(String fromAddress) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+	GoogleMapsProxyResource gmObj = new GoogleMapsProxyResource();
+	System.out.println("DEBUG WDSBlueMixProxyResource: client starting address address is " + fromAddress);
+	
+    Map<String, Object> closestLocationObject = gmObj.getClosestLocationObject(fromAddress, "grocery_or_supermarket");
+
+    System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store address is " + closestLocationObject.toString());
+
+ 	return closestLocationObject;
+}
+
+private void createConversationParameters(String dialog_id2, int parseInt) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	// Create the map containing the parameters required by the Dialog Service
     /**
-     * Returns selected movie details
-     * <p>
-     * This extracts the details of the movie specified. It uses themoviedb.org API to populate movie details in {@link MoviePayload}.
-     * </p>
+     * Creates a map of the conversation parameters required to converse with the Dialog Service 
      * 
-     * @param clientId the client id for the session
-     * @param conversationId the conversation id for the client id specified
-     * @param movieName the movie name
-     * @param movieId the movie id
-     * @return a response containing either of these two entities- {@code WDSConversationPayload} or {@code ServerErrorPayload}
+     *  @author - April Webster (Jan 13, 2016) awebster@us.ibm.com
+     *  @return a map of the conversation parameters required by the Dialog Service for conversing.
+     *  @param dialog_id - the id associated with a dialog provided by the Dialog Service
+     *  @param client_id - the id associated with the client conversing with dialog_id
+     *  @param conversation_id - the id of the specific conversation client_id is having with dialog_id (there can be more than one)
+     *  @param input - the string representing the client's conversation turn
      */
-    @GET
-    @Path("/getSelectedMovieDetails")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSelectedMovieDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
-            @QueryParam("movieName") String movieName, @QueryParam("movieId") String movieId) throws IOException, HttpException, WatsonTheatersException {
-
-        String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
-        String issue = null;
-        WDSConversationPayload conversationPayload = new WDSConversationPayload();
-        try {
-            // Get movie info from TMDB.
-            SearchTheMovieDbProxyResource tmdb = new SearchTheMovieDbProxyResource();
-            Response tmdbResponse = tmdb.getMovieDetails(movieId, movieName);
-            MoviePayload movie = (MoviePayload) tmdbResponse.getEntity();
-
-            // Set the profile variable for WDS.
-            List<NameValue> nameValues = new ArrayList<NameValue>();
-            nameValues.add(new NameValue("Selected_Movie", URLEncoder.encode(movieName, "UTF-8"))); //$NON-NLS-1$ //$NON-NLS-2$
-            nameValues.add(new NameValue("Popularity_Score", movie.getPopularity().toString())); //$NON-NLS-1$
-            dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
-
-            // Get the personalized prompt.
-            Map<String, Object> converseParams = new HashMap<String, Object>();
-            converseParams.put("dialog_id", dialog_id);
-            converseParams.put("client_id", Integer.parseInt(clientId));
-            converseParams.put("conversation_id", Integer.parseInt(conversationId));
-            converseParams.put("input", personalized_prompt_movie_selected);
-            Conversation conversation = dialogService.converse(converseParams);
-            String wdsMessage = StringUtils.join(conversation.getResponse(), " ");
-
-            // Add the wds personalized prompt to the MoviesPayload and return.
-            List<MoviePayload> movieList = new ArrayList<MoviePayload>();
-            movieList.add(movie);
-            conversationPayload.setMovies(movieList);
-            conversationPayload.setWdsResponse(wdsMessage);
-            if (UtilityFunctions.logger.isTraceEnabled()) {
-                UtilityFunctions.logger
-                        .trace(Messages.getString("WDSBlueMixProxyResource.MOVIE_NAME") + movieName + Messages.getString("WDSBlueMixProxyResource.POPULARITY") + movie.getPopularity().toString()); //$NON-NLS-1$ //$NON-NLS-2$
-                UtilityFunctions.logger.trace(Messages.getString("WDSBlueMixProxyResource.WDS_PROMPT_SELECTED_MOVIE") + wdsMessage); //$NON-NLS-1$
-            }
-            return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
-
-        } catch (IllegalStateException e) {
-            issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        }
-        return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
+    public Map<String,Object> createConversationParameterMap (String dialog_id, Integer client_id, Integer conversation_id, Object input){
+		Map<String, Object> converseParams = new HashMap<String, Object>();
+	    converseParams.put("dialog_id", dialog_id);
+	    converseParams.put("client_id", client_id);
+	    converseParams.put("conversation_id", conversation_id);
+	    converseParams.put("input", input); //Client's conversation turn 
+	    return converseParams;
     }
+    
+    
+ // Create the map containing the parameters required by the Dialog Service
+    /**
+     * Creates a map of the conversation parameters required to converse with the Dialog Service 
+     * 
+     *  @author - April Webster (Jan 13, 2016) awebster@us.ibm.com
+     *  @return a map of the conversation parameters required by the Dialog Service for conversing.
+     *  @param dialog_id - the id associated with a dialog provided by the Dialog Service
+     *  @param client_id - the id associated with the client conversing with dialog_id
+     *  @param conversation_id - the id of the specific conversation client_id is having with dialog_id (there can be more than one)
+     *  @param input - the string representing the client's conversation turn
+     */
+    public WDSConversationPayload createConversationPayload (String clientId, String input, String wdsResponse){
+    	WDSConversationPayload conversationPayload = new WDSConversationPayload();
+		conversationPayload.setClientId(clientId); //$NON-NLS-1$
+        conversationPayload.setConversationId(clientId); //$NON-NLS-1$
+        conversationPayload.setInput(input); //$NON-NLS-1$
+        conversationPayload.setWdsResponse(wdsResponse); //$NON-NLS-1$
+        
+	    return conversationPayload;
+    }
+    
+    
+
+    
 
     /**
      * Initializes chat with WDS This initiates the chat with WDS by requesting for a client id and conversation id(to be used in subsequent API calls) and a

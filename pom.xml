@@ -5,7 +5,7 @@
     <artifactId>movieapp-dialog</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>war</packaging>
-    <name>movieapp-dialog</name>
+    <name>moviapp-dialog</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,6 +19,16 @@
             <name>Liberty Repository</name>
             <url>http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/wasdev/maven/repository/</url>
         </repository>
+        
+        <!-- repository for personality -->
+        <!--
+        <repository>
+            <id>Local</id>
+            <name>MVN Local Repository</name>
+            <url>/Users/april/mvnrepo</url>
+        </repository>
+        -->
+        
     </repositories>
 
     <build>
@@ -427,7 +437,180 @@
         </profile>
     </profiles>
 
+
     <dependencies>
+    
+    
+    	<!--  addition by April Webster, January 19, 2016
+    		  personality-insights-twitter.jar from Jerry Schoudt's project -->
+    	<!-- personality-insights-twitters-java dependencies -->
+    	<!-- jar installed in local mvn repository /Users/april/mvnrepo -->  
+		<!--  
+      	<dependency>
+			<groupId>personality-insights-twitter-java</groupId>
+			<artifactId>personality-insights-twitter-java</artifactId>
+			<version>1.0</version>
+		</dependency>
+		-->
+		
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<!-- 
+		<dependency>
+		<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpcore</artifactId>
+			<version>4.4.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.6</version>
+		</dependency>
+		-->
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-client</artifactId>
+			<version>1.19</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-core</artifactId>
+			<version>1.19</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.7.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.7.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.twitter4j</groupId>
+			<artifactId>twitter4j-core</artifactId>
+			<version>4.0.4</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
+		
+		
+
+	
+	  <!--  
+      	<dependency>
+		    <groupId>com.ibm.watson.personalityinsights</groupId>
+		    <artifactId>personality-insights-twitter-java</artifactId>
+		    <version>1.0</version>
+		    <scope>system</scope>
+		    
+		    <systemPath>/Users/april/git/personality-insights-twitter-java/libs/personality-insights-twitter-java-1.0.jar</systemPath>
+		    -->
+		    <!-- 
+		    [ERROR]   The project com.ibm.watson.app:movieapp-dialog:0.0.1-SNAPSHOT 
+		    (/Users/april/git/movieapp-dialog/pom.xml) has 1 error
+			[ERROR]     'dependencies.dependency.systemPath' for 
+			com.ibm.watson.personalityinsights:personality-insights-twitter-java:jar 
+			must specify an absolute path but is ${project.parentdir}/
+			personality-insights-twitter-java/libs/personality-insights-twitter-java-1.0.jar 
+			@ line 459, column 19
+ 			
+		    <systemPath>${project.parentdir}/personality-insights-twitter-java/libs/personality-insights-twitter-java-1.0.jar</systemPath>
+		    -->
+		    <!-- [WARNING] 'dependencies.dependency.systemPath' for 
+		    com.ibm.watson.personalityinsights:personality-insights-twitter-java:jar 
+		    should not point at files within the project directory, 
+		    ${project.basedir}/libs/personality-insights-twitter-java-1.0.jar 
+		    will be unresolvable by dependent projects @ line 459, column 19
+		     -->
+		    <!--  
+		    <systemPath>${project.basedir}/libs/personality-insights-twitter-java-1.0.jar</systemPath>
+		    -->
+		<!-- </dependency>
+      	-->
+      	
+      	<!-- these are all located in http://mvnrepository.com/ -->
+      	
+		
+		<!--  
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.main.extras</groupId>
+			<artifactId>glassfish-embedded-all</artifactId>
+			<version>4.1.1</version>
+		</dependency>
+		<dependency>
+		<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2-api</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2-core</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2-locator</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>hk2-utils</artifactId>
+			<version>2.4.0</version>
+		</dependency> 
+		<dependency>
+			<groupId>javax</groupId>
+			<artifactId>javaee-api</artifactId>
+			<version>7.0</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>2.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-common</artifactId>
+			<version>2.4.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>3.0.14.Final</version>
+		</dependency>
+		-->
+		
+		
+		
+
+		
+
+        <!-- What's In Theater's dependencies -->
         <dependency>
             <groupId>com.ibm.tools.target</groupId>
             <artifactId>was-liberty</artifactId>
@@ -435,6 +618,7 @@
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
+        
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
@@ -449,13 +633,13 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.3.3</version>
+            <version>4.3.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.3.2</version>
+            <version>4.4.4</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -485,11 +669,16 @@
             <artifactId>log4j-core</artifactId>
             <version>2.1</version>
         </dependency>
+        
+        <!--  I also add this dependency, but version 3.4 -->
+        <!--  
         <dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.3.2</version>
 		</dependency>
+		-->
+		
 		<dependency>
       		<groupId>com.google.code.gson</groupId>
       		<artifactId>gson</artifactId>
@@ -501,16 +690,21 @@
             <artifactId>guava</artifactId>
             <version>18.0</version>
         </dependency>
+        
+        
         <dependency>
         	<groupId>com.ibm.watson.developer_cloud</groupId>
         	<artifactId>java-wrapper</artifactId>
         	<version>1.1.1</version>
         </dependency>
+        
+        
          <dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
 			<version>1.10.19</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- END: What's In Theater's dependencies -->
     </dependencies>
 </project>

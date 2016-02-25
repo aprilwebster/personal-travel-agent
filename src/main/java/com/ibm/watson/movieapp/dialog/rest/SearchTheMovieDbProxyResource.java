@@ -56,6 +56,8 @@ import com.ibm.watson.movieapp.dialog.payload.MoviePayload;
 import com.ibm.watson.movieapp.dialog.payload.ServerErrorPayload;
 import com.ibm.watson.movieapp.dialog.payload.WDSConversationPayload;
 
+
+
 /**
  * <p>
  * Proxy class to communicate with themoviedb.org. This class acts as a proxy on the server-side to communicate with themoviedb.org via RESTful API calls and
@@ -398,6 +400,8 @@ public class SearchTheMovieDbProxyResource {
 
             URI uri = buildUriStringFromParamsHash(params, MOVIE_DETAILS + movieId);
             JsonObject tmdbResponse = UtilityFunctions.httpGet(createTMDBHttpClient(), uri);
+            
+            
             MoviePayload moviePayload = new MoviePayload();
             moviePayload.setMovieId(Integer.parseInt(tmdbResponse.get("id").toString())); //$NON-NLS-1$
             moviePayload.setMovieName(UtilityFunctions.getPropValue(tmdbResponse, "title")); //$NON-NLS-1$
