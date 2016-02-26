@@ -28,12 +28,12 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.ibm.watson.movieapp.dialog.exception.WatsonTheatersException;
-import com.ibm.watson.movieapp.dialog.payload.MoviePayload;
-import com.ibm.watson.movieapp.dialog.payload.WDSConversationPayload;
-import com.ibm.watson.movieapp.dialog.rest.Messages;
-import com.ibm.watson.movieapp.dialog.rest.SearchTheMovieDbProxyResource;
-import com.ibm.watson.movieapp.dialog.rest.WDSBlueMixProxyResource;
+import com.ibm.watson.travelagentapp.dialog.exception.WatsonTheatersException;
+import com.ibm.watson.travelagentapp.dialog.payload.MoviePayload;
+import com.ibm.watson.travelagentapp.dialog.payload.WDSConversationPayload;
+import com.ibm.watson.travelagentapp.dialog.rest.Messages;
+import com.ibm.watson.travelagentapp.dialog.rest.SearchTheMovieDbProxyResource;
+import com.ibm.watson.travelagentapp.dialog.rest.WDSBlueMixProxyResource;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SearchTheMovieDbProxyResourceTest {
