@@ -28,5 +28,26 @@
 	<classpathentry kind="lib" path="libs/jersey-core-1.19.jar"/>
 	<classpathentry kind="lib" path="libs/twitter4j-core-4.0.4.jar"/>
 	<classpathentry kind="lib" path="libs/commons-io-2.4.jar"/>
+	<classpathentry kind="lib" path="/Users/april/.m2/repository/org/apache/logging/log4j/log4j-api/2.1/log4j-api-2.1.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="org.eclipse.jst.component.archivename" value="log4j-api-2.1.jar"/>
+			<attribute name="maven.groupId" value="org.apache.logging.log4j"/>
+			<attribute name="maven.artifactId" value="log4j-api"/>
+			<attribute name="maven.version" value="2.1"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/Users/april/git/personal-travel-agent/libs/gson-2.6.2.jar"/>
+	<classpathentry kind="lib" path="/Users/april/.m2/repository/com/google/code/gson/gson/2.3/gson-2.3.jar" sourcepath="/Users/april/.m2/repository/com/google/code/gson/gson/2.3/gson-2.3-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="org.eclipse.jst.component.archivename" value="gson-2.3.jar"/>
+			<attribute name="maven.groupId" value="com.google.code.gson"/>
+			<attribute name="maven.artifactId" value="gson"/>
+			<attribute name="maven.version" value="2.3"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

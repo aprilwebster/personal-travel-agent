@@ -30,6 +30,7 @@ public class WDSConversationPayload {
     private String input;
     private String wdsResponse;
     private List<MoviePayload> movies;
+    private List<StorePayload> stores;
     private Integer totalPages;
     private Integer numMovies;
 

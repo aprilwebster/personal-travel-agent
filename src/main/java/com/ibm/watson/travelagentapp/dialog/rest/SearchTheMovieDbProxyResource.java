@@ -287,6 +287,7 @@ public class SearchTheMovieDbProxyResource {
         // Get the next 10 movies from the returned payload from themoviedb
         List<MoviePayload> movies = getResults(jArray, (searchForward ? (currentIndex - ((pageNum - 1) * 20)) : currentIndex));
 
+        
         // Return payload.
         WDSConversationPayload moviesPayload = new WDSConversationPayload();
         moviesPayload.setMovies(movies);

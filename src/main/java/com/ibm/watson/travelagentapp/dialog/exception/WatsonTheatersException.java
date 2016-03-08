@@ -15,6 +15,7 @@
 
 package com.ibm.watson.travelagentapp.dialog.exception;
 
+
 /**
  * <P>
  * WatsonTheatersException Object

@@ -20,5 +20,10 @@ Deploy the WAR file that you built in the previous section by using Cloud Foundr
 4. Deploy the app to Bluemix by running the following command: 
     ``cf push <yourAppName> -p <warName>.war``
 
-
+#### Deploying a (new) dialog file to BLuemix
+TBA
+Update DIALOG_ID variable with the id for the newly uploaded dialog file in 3 locations
+* server.env files (Liberty Server)
+* ``<projectName>/src/it/resources/server.env`` 
+* Bluemix User-Defined Environment Variables
 
