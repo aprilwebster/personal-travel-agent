@@ -17,6 +17,7 @@ package com.ibm.watson.travelagentapp.dialog.rest;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,20 +29,35 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.ClientProtocolException;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.ibm.watson.developer_cloud.dialog.v1.DialogService;
-import com.ibm.watson.developer_cloud.dialog.v1.model.Conversation;
-import com.ibm.watson.developer_cloud.dialog.v1.model.NameValue;
-import com.ibm.watson.travelagentapp.dialog.payload.ServerErrorPayload;
-import com.ibm.watson.travelagentapp.dialog.payload.WDSConversationPayload;
-import com.ibm.watson.travelagentapp.utilities.Similarity;
+
+
 import com.ibm.watson.travelagentapp.webservices.googlemaps.GoogleMapsProxyResource;
+import com.ibm.watson.travelagentapp.utilities.Similarity;
 import com.ibm.watson.travelagentapp.webservices.twitter.TwitterAnalyzer;
 import com.ibm.watson.travelagentapp.webservices.watson.WatsonEmotionServiceProxyResource;
+
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpException;
+import org.apache.http.client.ClientProtocolException;
+import com.google.gson.JsonArray;
+
+import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
+
+import com.ibm.watson.developer_cloud.dialog.v1.model.Conversation;
+import com.ibm.watson.developer_cloud.dialog.v1.model.*;
+import com.ibm.watson.developer_cloud.dialog.v1.model.NameValue;
+import com.ibm.watson.travelagentapp.dialog.exception.WatsonTheatersException;
+import com.ibm.watson.travelagentapp.dialog.payload.MoviePayload;
+
+import com.ibm.watson.travelagentapp.dialog.payload.ServerErrorPayload;
+import com.ibm.watson.travelagentapp.dialog.payload.StorePayload;
+
+import com.ibm.watson.travelagentapp.dialog.payload.WDSConversationPayload;
+import com.ibm.watson.travelagentapp.dialog.rest.UtilityFunctions;
+
+import com.ibm.watson.developer_cloud.dialog.v1.DialogService;
 
 
 // Importing PI eclipse project to get a personality profile given a twitter handle
@@ -71,6 +87,10 @@ public class WDSBlueMixProxyResource {
     private static String username_dialog = null;
     private static String password_dialog = null;
     private static String walking_distance = "walking distance";
+    
+    private static String personalized_prompt_movie_selected = "USER CLICKS BOX"; //$NON-NLS-1$
+    private static String personalized_prompt_store_selected = "USER CLICKS STORE"; //$NON-NLS-1$
+    private static String personalized_prompt_movies_returned = "UPDATE NUM_MOVIES"; //$NON-NLS-1$
     
     private static Boolean DEBUG = true;
     
@@ -116,9 +136,10 @@ public class WDSBlueMixProxyResource {
         envServices = System.getenv("DIALOG_ID"); //$NON-NLS-1$
         if (envServices != null) {
             dialog_id = envServices;
-            UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_SUCCESS")); //$NON-NLS-1$
+            //UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_SUCCESS")); //$NON-NLS-1$
         } else {
-            UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_FAIL")); //$NON-NLS-1$
+            //UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_FAIL")); //$NON-NLS-1$
+            System.out.println("DEBUG - error getting credentials");
         }
 
     }
@@ -132,8 +153,9 @@ public class WDSBlueMixProxyResource {
             dialogService.setUsernameAndPassword(username_dialog, password_dialog);
             dialogService.setEndPoint(wds_base_url);
         }else{
-            UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_CREDENTIALS_EMPTY"));
-        }
+            //UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_CREDENTIALS_EMPTY"));
+        	System.out.println("DEBUG - error getting credentials");
+       }
     }
 
     /**
@@ -255,7 +277,7 @@ public class WDSBlueMixProxyResource {
         if (input == null || input.trim().isEmpty()) {
             errorMessage = Messages.getString("WDSBlueMixProxyResource.SPECIFY_INPUT"); //$NON-NLS-1$
             issue = Messages.getString("WDSBlueMixProxyResource.EMPTY_QUESTION"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue);
+            //UtilityFunctions.logger.error(issue);
             return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
         }
         try {
@@ -483,6 +505,8 @@ public class WDSBlueMixProxyResource {
 	                System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
 	                
 	                
+	                
+	                
 	                Map<String,Object> closestGroceryStoreObject = getClosestGroceryStoreAddress(closestClothingStoreAddress);
 	                String groceryStoreName = (String)closestGroceryStoreObject.get("name");
 	                String groceryStoreAddress = (String)closestGroceryStoreObject.get("address");
@@ -509,11 +533,34 @@ public class WDSBlueMixProxyResource {
 	                conversation = dialogService.converse(converseParams);
 	                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
 	
+	                // Build the List<StorePayload> stores to add to the WDSConversationPayload
+	                List<StorePayload> stores = new ArrayList<>();
+	                StorePayload s1 = new StorePayload();
+	                s1.setId("1");
+	                s1.setName("J Crew");
+	                s1.setAddress("650 Harry Rd, San Jose");
+	                
+	                StorePayload s2 = new StorePayload();
+	                s2.setId("2");
+	                s2.setName("Esprit");
+	                s2.setAddress("505 Cypress Point Drive, Mountain View");
+	                
+	                List<StorePayload> storesList = new ArrayList<>();
+	                storesList.add(s1);
+	                storesList.add(s2);
+	                System.out.println("DEBUG WDSBlueMixProxyResource: stores payload is " + storesList);
+	                System.out.println("DEBUG WDSBlueMixProxyResource: what is going on???");
+	                System.out.println("DEBUG WDSBlueMixProxyResource: 1st store is " + storesList.get(0).getName());
+	                
+	                
 	                // Build the payload - wdsResponse?
 	                conversationPayload.setWdsResponse(wdsMessage);
 	                conversationPayload.setClientId(clientId); 
 	                conversationPayload.setConversationId(clientId); 
+	                System.out.println("DEBUG WDSBlueMixProxyResource: clientId is " + conversationPayload.getClientId());
 	                conversationPayload.setInput(input); 
+	                conversationPayload.setStores(storesList);
+	                System.out.println("DEBUG WDSBlueMixProxyResource: 1st store is " + conversationPayload.getStores().get(0).getName());
 	
 	                // Removed the logger from here - add it back in later on
 
@@ -654,7 +701,113 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
     }
     
     
+    
+    
+    @GET
+    @Path("/getSelectedStoreDetails")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSelectedStoreDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
+            @QueryParam("storeName") String storeName) throws IOException, HttpException, WatsonTheatersException {
 
+        String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
+        String issue = null;
+        WDSConversationPayload conversationPayload = new WDSConversationPayload();
+        try {
+            // Get store info - replace static data with call to Google Maps for details
+            StorePayload store = new StorePayload();
+            store.setAddress("2855 Stevens Creek Blvd, San Jose, CA");
+            store.setId("1");
+
+            // Set the profile variable for WDS.
+            Map<String, String> profile = new HashMap<>();
+            profile.put("Selected_Store", URLEncoder.encode(storeName, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
+            dialogService.updateProfile(dialog_id, new Integer(clientId), (List<NameValue>) profile);
+
+            // Get the personalized prompt.
+            Map<String, Object> converseParams = new HashMap<String, Object>();
+            converseParams.put("dialog_id", dialog_id);
+            converseParams.put("client_id", Integer.parseInt(clientId));
+            converseParams.put("conversation_id", Integer.parseInt(conversationId));
+            converseParams.put("input", personalized_prompt_store_selected);
+            Conversation conversation = dialogService.converse(converseParams);
+            String wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+
+            // Add the wds personalized prompt to the MoviesPayload and return.
+            List<StorePayload> storeList = new ArrayList<StorePayload>();
+            storeList.add(store);
+            conversationPayload.setStores(storeList);
+            conversationPayload.setWdsResponse(wdsMessage);
+            return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
+
+        } catch (IllegalStateException e) {
+            issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
+            UtilityFunctions.logger.error(issue, e);
+        }
+        return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
+    }
+    
+    
+    
+    /**
+     * Returns selected movie details
+     * <p>
+     * This extracts the details of the movie specified. It uses themoviedb.org API to populate movie details in {@link MoviePayload}.
+     * </p>
+     * 
+     * @param clientId the client id for the session
+     * @param conversationId the conversation id for the client id specified
+     * @param movieName the movie name
+     * @param movieId the movie id
+     * @return a response containing either of these two entities- {@code WDSConversationPayload} or {@code ServerErrorPayload}
+     */
+    @GET
+    @Path("/getSelectedMovieDetails")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSelectedMovieDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
+            @QueryParam("movieName") String movieName, @QueryParam("movieId") String movieId) throws IOException, HttpException, WatsonTheatersException {
+
+        String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
+        String issue = null;
+        WDSConversationPayload conversationPayload = new WDSConversationPayload();
+        try {
+            // Get movie info from TMDB.
+            SearchTheMovieDbProxyResource tmdb = new SearchTheMovieDbProxyResource();
+            Response tmdbResponse = tmdb.getMovieDetails(movieId, movieName);
+            MoviePayload movie = (MoviePayload) tmdbResponse.getEntity();
+
+            // Set the profile variable for WDS.
+            Map<String, String> profile = new HashMap<>();
+            profile.put("Selected_Movie", URLEncoder.encode(movieName, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
+            profile.put("Popularity_Score", movie.getPopularity().toString()); //$NON-NLS-1$
+            dialogService.updateProfile(dialog_id, new Integer(clientId), (List<NameValue>) profile);
+
+            // Get the personalized prompt.
+            Map<String, Object> converseParams = new HashMap<String, Object>();
+            converseParams.put("dialog_id", dialog_id);
+            converseParams.put("client_id", Integer.parseInt(clientId));
+            converseParams.put("conversation_id", Integer.parseInt(conversationId));
+            converseParams.put("input", personalized_prompt_movie_selected);
+            Conversation conversation = dialogService.converse(converseParams);
+            String wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+
+            // Add the wds personalized prompt to the MoviesPayload and return.
+            List<MoviePayload> movieList = new ArrayList<MoviePayload>();
+            movieList.add(movie);
+            conversationPayload.setMovies(movieList);
+            conversationPayload.setWdsResponse(wdsMessage);
+            if (UtilityFunctions.logger.isTraceEnabled()) {
+                UtilityFunctions.logger
+                        .trace(Messages.getString("WDSBlueMixProxyResource.MOVIE_NAME") + movieName + Messages.getString("WDSBlueMixProxyResource.POPULARITY") + movie.getPopularity().toString()); //$NON-NLS-1$ //$NON-NLS-2$
+                UtilityFunctions.logger.trace(Messages.getString("WDSBlueMixProxyResource.WDS_PROMPT_SELECTED_MOVIE") + wdsMessage); //$NON-NLS-1$
+            }
+            return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
+
+        } catch (IllegalStateException e) {
+            issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
+            UtilityFunctions.logger.error(issue, e);
+        }
+        return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
+    }
     
 
     /**

@@ -14,29 +14,32 @@
  */
 (function () {
     'use strict';
-
-    angular.module('dialog.movie', ['ngAnimate'])
+    /*eslint-disable no-alert, no-console, no-trailing-spaces, no-mixed-spaces-and-tabs */
+    
+    angular.module('dialog.store', ['ngAnimate'])
 
     /**
-     * @name movie
-     * @module modules/movie
+     * @name store
+     * @module modules/store
      *
      * @description
      *
-     * Renders a  within the UI. The WDS API will notify the dialogapp
+     * Renders a store within the UI. The WDS API will notify the dialogapp
      * server side code to get a list of stores. At this point
-     * a list of stores will be returned and a <store> element added for each movie.
+     * a list of stores will be returned and a <store> element added for each store.
      * The store is a clickable element which causes the preview panel to load.
      *
      * @param {object}
-     *            content - a reference to the movie object the element represents.
+     *            content - a reference to the store object the element represents.
      */
     .directive('store', function ($parse, $timeout) {
         return {
             'restrict': 'A',
             'link': function (scope, element, attr) {
-                var store = $parse(attr.content)(scope); //Get the 'movie' object from the content attribute
-                var htmlContent = '<span class="dialog-movie-link">' + store.name + '</span>';
+                var store = $parse(attr.content)(scope); //Get the 'store' object from the content attribute
+                //var htmlContent = '<span class="dialog-store-link">' + store.storeName + '</span>'; //AW - name or storeName
+                var htmlContent = '<span class="dialog-store-link">' + 'PLEASE WORK' + '</span>'; //AW - name or storeName
+                
                 var startY = -1;
                 var delayTimeout = null;
                 var clickAction = function (e) {
@@ -74,6 +77,7 @@
                 });
                 element.bind('click', clickAction);
                 //If it is a mobile UI or a low res UI then put focus on the first returned movie
+                /*
                 if ($(window).height() <= 750 && $.isArray(scope.dialogCtrl.conversation) && scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1]) {
                     if (scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].stores) {
                         if ($.isArray(scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].stores)) {
@@ -89,7 +93,7 @@
                             }
                         }
                     }
-                }
+                }*/
             }
         };
     });

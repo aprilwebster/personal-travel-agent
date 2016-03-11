@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 (function () {
     'use strict';
-
+    /*eslint-disable no-alert, no-console, no-trailing-spaces, no-mixed-spaces-and-tabs */
     angular.module('dialog.service', [])
 
     /**
@@ -24,8 +25,10 @@
      *
      * Implements the dialogService interface using the Watson Theaters App API to interface with the
      * Watson Dialog Service (WDS) and themoviedb.org's movie API.
+     * Note: cannot inject $scope into a service; only a controller or a directive
+     * 
      */
-    .service('dialogService', function (_, $http, $q, dialogParser) {
+    .service('dialogService', function (_, $http, $q, $log, dialogParser) {
         var clientId;
         var conversationId;
         var welcomeMessage;
@@ -114,6 +117,7 @@
          * @return {object} A JSON object representing a segment in the conversation.
          */
         var getResponse = function (question) {
+        	$log.debug('DEBUG dialog-service: in getResponse function');
             return $http.get('../api/bluemix/postConversation', {
                 'params': {
                     'clientId': clientId,
@@ -123,7 +127,11 @@
             }).then(function (response) {
                 var watsonResponse = response.data.wdsResponse;
                 var movies = null, htmlLinks = null, transformedPayload = null;
+                var stores = null;
                 var segment = null;
+                var firstStore = null;
+                var segmentStores = null;
+                var segmentFirstStore = null;
                 if (watsonResponse) {
                     if (!dialogParser.isMctInPayload(watsonResponse)) {
                         //For 'mct' tags we have to maintain the formatting.
@@ -132,11 +140,19 @@
                     //yes, seems odd, but we are compensating for some
                     //inconsistencies in the API and how it handles new lines
                     watsonResponse = watsonResponse.replace(/\n+/g, '<br/>');
-                }
+                    }
                 if ($.isArray(response.data.movies)) {
                     movies = response.data.movies;
+                    $log.debug('DEBUG dialog-service getResponse: the response has movies');
+                }
+                if ($.isArray(response.data.stores)) {
+                    stores = response.data.stores;
+                    $log.debug('DEBUG dialog-service getResponse: the response has stores');
+                    firstStore = stores[0];
+                    $log.debug('DEBUG dialog-service getResponse: stores = ' + firstStore.name);
                 }
                 if (!watsonResponse) {
+                	$log.debug('DEBUG dialog-service getResponse: mayday there is no watsonResponse!');
                     //Unlikely, but hardcoding these values in case the dialog service/account does
                     //not provide a response with the list of movies.
                     if (movies) {
@@ -156,8 +172,11 @@
                         'message': question,
                         'responses': watsonResponse,
                         'movies': movies,
+                        'stores': stores,
                         'options': htmlLinks
                     };
+                segmentStores = segment.stores;
+                $log.debug('DEBUG dialog-service getResponse: stores in the segment returned = ' + segmentStores);
                 return segment;
             }, function (error) {
                 //Error case!
@@ -202,6 +221,7 @@
                     conversation.forEach(function (segment) {
                         if (segment.index === index - 1) {
                             segment.responses = lastRes.responses;
+                            segment.stores = lastRes.stores;
                             segment.movies = lastRes.movies;
                             segment.options = lastRes.options;
                         }
@@ -236,6 +256,9 @@
                     if (segment.movies && segment.movies.length > 0) {
                         segment = segment.movies[0];
                     }
+                    if (segment.stores && segment.stores.length > 0) {
+                        segment = segment.stores[0];
+                    }
                     segment.commentary = response.data.wdsResponse;
                 }
                 return segment;
@@ -256,12 +279,54 @@
             });
         };
 
+        
+        var getStoreInfo = function (name) {
+        	$log.debug('DEBUG dialog-service: in getStoreInfo function.  name is ' + name);
+            return initChat().then(function (res) {
+                return $http.get('../api/bluemix/getSelectedStoreDetails', {
+                'params': {
+                    'clientId': res.clientId,
+                    'conversationId': res.conversationId,
+                    'name': name
+                }
+            }, function (errorResponse) {
+                var data = errorResponse;
+                if (errorResponse) {
+                    data = data.data;
+                }
+            }).then(function (response) {
+                var segment = response.data;
+                if (segment) {
+                    if (segment.stores && segment.stores.length > 0) {
+                        segment = segment.stores[0];
+                    }
+                    segment.commentary = response.data.wdsResponse;
+                }
+                return segment;
+                },
+                function (error) {
+                    var segment = error.data;
+                    if (segment) {
+                        if (error.data.userErrorMessage) {
+                            segment.commentary = error.data.userErrorMessage;
+                        }
+                        else {
+                            segment.commentary = 'Failed to retrieve store details. Please retry later.';
+                        }
+                    }
+                    segment.error = true;
+                    return segment;
+                });
+            });
+        };
+        
         return {
             'getConversation': getConversation,
             'getLatestResponse': getLatestResponse,
             'initChat': initChat,
             'query': query,
-            'getMovieInfo': getMovieInfo
+            'getMovieInfo': getMovieInfo,
+            'getStoreInfo': getStoreInfo
         };
-    });
+    });    
 }());

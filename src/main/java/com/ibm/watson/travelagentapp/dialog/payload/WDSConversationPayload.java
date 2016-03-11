@@ -33,6 +33,7 @@ public class WDSConversationPayload {
     private List<StorePayload> stores;
     private Integer totalPages;
     private Integer numMovies;
+    private Integer numStores;
 
     /**
      * @return  the conversation id which is unique to a conversation in WDS
@@ -119,6 +120,24 @@ public class WDSConversationPayload {
     public void setTotalPages(Integer totalPages) {
         this.totalPages = totalPages;
     }
+
+	public List<StorePayload> getStores() {
+		System.out.println("DEBUG WDSConversationPayload: getStores called.");
+		return stores;
+	}
+
+	public void setStores(List<StorePayload> stores) {
+		System.out.println("DEBUG WDSConversationPayload: setStores called. 1st store is " + stores.get(0).getName());
+		this.stores = stores;
+	}
+
+	public Integer getNumStores() {
+		return numStores;
+	}
+
+	public void setNumStores(Integer numStores) {
+		this.numStores = numStores;
+	}
 
     /**
      * @return  the total number of movies obtained using TMDB API based on the movie type preferences(uses this class object simply as a container to allow

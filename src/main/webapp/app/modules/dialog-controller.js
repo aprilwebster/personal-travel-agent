@@ -14,6 +14,7 @@
  */
 (function () {
     'use strict';
+    /*eslint-disable no-alert, no-console, no-trailing-spaces, no-mixed-spaces-and-tabs */
 
     /**
      * @name DialogController
@@ -66,7 +67,86 @@
         self.selectedMovies = [];
         self.selectedMovie = {};
         self.showFavorites = false;
+        self.selectedStores = [];
+        self.selectedStore = {};
 
+        
+        self.selectStore = function (store) {
+            var result = null;
+            var keys = null;
+            var objKeys = null;
+            var query = null;
+            var scrollable = null;
+            var name = null;
+            //$log.debug('DEBUG dialog-controller: in selectStore function. name is ' + name);
+            
+            if (store) {
+            	//$log.debug('DEBUG dialog-controller: in selectStore function. store is ' + store);
+                name = store.name;
+            }
+            else {
+                return null;
+            }
+            result = _.find(self.selectedStores, { 'name': name });
+            if (result) {
+                keys = _.keys(self.selectedStore);
+                if (keys) {
+                    keys.forEach(function (key) {
+                        delete self.selectedStore[key];
+                    });
+                }
+                _.assign(self.selectedStore, result);
+                //We don't need to wait for a response here, we already have cached info.
+                //We are just notifying WDS of the selection.
+                dialogService.getStoreInfo(name);
+                scrollable = $('#scrollable-div');
+                if (scrollable[0]) {
+                    scrollable.animate({ 'scrollTop': scrollable[0].scrollHeight }, 1000);
+                }
+                //Reduce space between chat box and chat messages
+                if ( $('#scrollable-div').height() > $('#conversationParent').height() ) {
+                    $('.dialog-center').css({ 'top': $('#scrollable-div').height() - $('#conversationParent').height() - 10 + 'px' });
+                    setState(states.preview);
+                    return result;
+                }
+                $('.dialog-center').css({ 'top': '0px' });
+                setState(states.preview);
+                return result;
+            }
+            else {
+                query = dialogService.getStoreInfo(name);
+                query.then(function (segment) {
+                    if (segment.error === true) {
+                        setState(states.chatting);
+                    }
+                    else {
+                        setState(states.preview);
+                    }
+                    objKeys = _.keys(self.selectedStore);
+                    if (objKeys) {
+                        objKeys.forEach(function (objKey) {
+                            delete self.selectedStore[objKey]; //reset selected movie
+                        });
+                    }
+                    _.assign(self.selectedStore, segment);
+                    if (segment.error !== true) {
+                        self.selectedStores.push(segment);
+                    }
+                    $('#scrollable-div').animate({ 'scrollTop': $('#scrollable-div')[0].scrollHeight }, 1000);
+                    //Reduce space between chat box and chat messages
+                    if ( $('#scrollable-div').height() > $('#conversationParent').height() ) {
+                    $('.dialog-center').css({ 'top': $('#scrollable-div').height() - $('#conversationParent').height() - 10 + 'px' });
+                    return self.selectedStore;
+                    }
+                    $('.dialog-center').css({ 'top': '0px' });
+                    return self.selectedStore;
+                });
+            }
+        };
+        
+        
+        
+        
         /**
          * Called when a user clicks on a movie within the UI. This util method first checked if the selected
          * movie was previously clicked on. If it was the cached movie details are displayed and a REST call
@@ -155,6 +235,7 @@
          * Sets the 'selectedMovie' object back to an empty object.
          *
          */
+     
         self.clearMovieSelection = function () {
             var objKeys = _.keys(self.selectedMovie);
             if (objKeys) {

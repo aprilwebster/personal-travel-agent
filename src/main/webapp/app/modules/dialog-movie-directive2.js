@@ -31,18 +31,18 @@
      * @param {object}
      *            content - a reference to the movie object the element represents.
      */
-    .directive('store', function ($parse, $timeout) {
+    .directive('movie', function ($parse, $timeout) {
         return {
             'restrict': 'A',
             'link': function (scope, element, attr) {
-                var store = $parse(attr.content)(scope); //Get the 'movie' object from the content attribute
-                var htmlContent = '<span class="dialog-movie-link">' + store.name + '</span>';
+                var movie = $parse(attr.content)(scope); //Get the 'movie' object from the content attribute
+                var htmlContent = '<span class="dialog-movie-link">' + movie.movieName + '</span>';
                 var startY = -1;
                 var delayTimeout = null;
                 var clickAction = function (e) {
                     //Once the movie 'button' is clicked, notify the controller
                     //that a new movie must be selected.
-                    scope.dialogCtrl.selectStore(store);
+                    scope.dialogCtrl.selectMovie(movie);
                     e.preventDefault();
                     e.stopPropagation();
                 };
@@ -75,9 +75,9 @@
                 element.bind('click', clickAction);
                 //If it is a mobile UI or a low res UI then put focus on the first returned movie
                 if ($(window).height() <= 750 && $.isArray(scope.dialogCtrl.conversation) && scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1]) {
-                    if (scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].stores) {
-                        if ($.isArray(scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].stores)) {
-                            if (store === scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].stores[0]) {
+                    if (scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].movies) {
+                        if ($.isArray(scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].movies)) {
+                            if (movie === scope.dialogCtrl.conversation[scope.dialogCtrl.conversation.length - 1].movies[0]) {
                                 if (delayTimeout) {
                                     $timeout.cancel(delayTimeout);
                                 }

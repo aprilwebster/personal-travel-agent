@@ -39,15 +39,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="/Users/april/git/personal-travel-agent/libs/gson-2.6.2.jar"/>
-	<classpathentry kind="lib" path="/Users/april/.m2/repository/com/google/code/gson/gson/2.3/gson-2.3.jar" sourcepath="/Users/april/.m2/repository/com/google/code/gson/gson/2.3/gson-2.3-sources.jar">
-		<attributes>
-			<attribute name="maven.pomderived" value="true"/>
-			<attribute name="org.eclipse.jst.component.archivename" value="gson-2.3.jar"/>
-			<attribute name="maven.groupId" value="com.google.code.gson"/>
-			<attribute name="maven.artifactId" value="gson"/>
-			<attribute name="maven.version" value="2.3"/>
-			<attribute name="maven.scope" value="compile"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

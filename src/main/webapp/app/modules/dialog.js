@@ -22,6 +22,7 @@
     'dialog.controller',
     'dialog.resize',
     'dialog.movie',
+    //'dialog.store',
     'dialog.compile',
     'dialog.favorite',
     'dialog.rating',

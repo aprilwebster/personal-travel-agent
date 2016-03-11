@@ -31,13 +31,14 @@ package com.ibm.watson.travelagentapp.dialog.payload;
 public class StorePayload {
     private String id;
     private String name;
-    private Boolean open_now;
-    private Integer price_level;
-    private Double rating;
-    private String vicinity;
-    private Double latitude;
-    private Double longitude;
-    private String homepageUrl;
+    private String address;
+    //private Boolean open_now;
+    //private Integer price_level;
+    //private Double rating;
+    //private String vicinity;
+    //private Double latitude;
+    //private Double longitude;
+    //private String homepageUrl;
 	public String getId() {
 		return id;
 	}
@@ -50,7 +51,18 @@ public class StorePayload {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public Boolean getOpen_now() {
+	public String getAddress() {
+		return address;
+	}
+	public void setAddress(String address) {
+		this.address = address;
+	}
+	
+
+	
+	
+	
+	/*public Boolean getOpen_now() {
 		return open_now;
 	}
 	public void setOpen_now(Boolean open_now) {
@@ -91,7 +103,7 @@ public class StorePayload {
 	}
 	public void setHomepageUrl(String homepageUrl) {
 		this.homepageUrl = homepageUrl;
-	}
+	}*/
 
 
 
