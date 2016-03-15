@@ -707,8 +707,10 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
     @Path("/getSelectedStoreDetails")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSelectedStoreDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
-            @QueryParam("storeName") String storeName) throws IOException, HttpException, WatsonTheatersException {
+            @QueryParam("storeName") String name) throws IOException, HttpException, WatsonTheatersException {
 
+    	System.out.println("DEBUG WDSBlueMixProxyResource: getSelectedStoreDetails called with " + name);
+    	
         String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
         String issue = null;
         WDSConversationPayload conversationPayload = new WDSConversationPayload();
@@ -720,7 +722,7 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
 
             // Set the profile variable for WDS.
             Map<String, String> profile = new HashMap<>();
-            profile.put("Selected_Store", URLEncoder.encode(storeName, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
+            profile.put("Selected_Store", URLEncoder.encode(name, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
             dialogService.updateProfile(dialog_id, new Integer(clientId), (List<NameValue>) profile);
 
             // Get the personalized prompt.

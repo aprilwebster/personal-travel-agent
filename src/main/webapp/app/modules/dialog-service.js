@@ -281,7 +281,7 @@
 
         
         var getStoreInfo = function (name) {
-        	$log.debug('DEBUG dialog-service: in getStoreInfo function.  name is ' + name);
+        	//$log.debug('DEBUG dialog-service getStoreInfo: function called.  name is ' + name + '. getSelectedStoreDetails called.');
             return initChat().then(function (res) {
                 return $http.get('../api/bluemix/getSelectedStoreDetails', {
                 'params': {
