@@ -707,9 +707,9 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
     @Path("/getSelectedStoreDetails")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSelectedStoreDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
-            @QueryParam("storeName") String name) throws IOException, HttpException, WatsonTheatersException {
+            @QueryParam("name") String name) throws IOException, HttpException, WatsonTheatersException {
 
-    	System.out.println("DEBUG WDSBlueMixProxyResource: getSelectedStoreDetails called with " + name);
+    	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: called with name " + name);
     	
         String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
         String issue = null;
@@ -717,15 +717,26 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
         try {
             // Get store info - replace static data with call to Google Maps for details
             StorePayload store = new StorePayload();
+            store.setName(name);
+            // AW - 3/29/16 - need to replace this with a call to Google Maps to get the address!!
             store.setAddress("2855 Stevens Creek Blvd, San Jose, CA");
             store.setId("1");
 
             // Set the profile variable for WDS.
-            Map<String, String> profile = new HashMap<>();
-            profile.put("Selected_Store", URLEncoder.encode(name, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
-            dialogService.updateProfile(dialog_id, new Integer(clientId), (List<NameValue>) profile);
+            //Map<String, String> profile = new HashMap<>();
+            //profile.put("Selected_Store", URLEncoder.encode(name, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
+            //dialogService.updateProfile(dialog_id, new Integer(clientId), (List<NameValue>) profile);
+            List<NameValue> nameValues = new ArrayList<NameValue>();
+            // Issue updateProfile request to the WDS to update the profile variable - Personality Profile - for the client/dialog
+            // TODO: use a better variable name that nameValues - not descriptive at all
+            nameValues = new ArrayList<NameValue>();
+            nameValues.add(new NameValue("Selected_Store", URLEncoder.encode(name, "UTF-8"))); //$NON-NLS-1$
+            dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
+            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: profile variable Personality_Profile update request sent to WDS");
+                
 
             // Get the personalized prompt.
+            // **************** AW - 3/29/16 IS THIS CORRECT??? - doesn't look like the code in the diff
             Map<String, Object> converseParams = new HashMap<String, Object>();
             converseParams.put("dialog_id", dialog_id);
             converseParams.put("client_id", Integer.parseInt(clientId));
@@ -735,9 +746,13 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
             String wdsMessage = StringUtils.join(conversation.getResponse(), " ");
 
             // Add the wds personalized prompt to the MoviesPayload and return.
-            List<StorePayload> storeList = new ArrayList<StorePayload>();
-            storeList.add(store);
-            conversationPayload.setStores(storeList);
+            //List<StorePayload> storeList = new ArrayList<StorePayload>();
+            // storeList.add(store);
+            //conversationPayload.setStores(storeList);
+            List<StorePayload> stores = new ArrayList<StorePayload>();
+            stores.add(store);
+            conversationPayload.setStores(stores);
+            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: stores added to the payload.  First store is " + conversationPayload.getStores().get(0).getName());
             conversationPayload.setWdsResponse(wdsMessage);
             return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
 
