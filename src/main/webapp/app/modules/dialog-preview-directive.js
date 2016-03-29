@@ -14,6 +14,7 @@
  */
 (function () {
     'use strict';
+    /*eslint-disable no-alert, no-console, no-trailing-spaces, no-mixed-spaces-and-tabs, space-infix-ops */
 
     angular.module('dialog.preview', [])
 
@@ -32,10 +33,10 @@
      */
     .directive('preview', function ($parse, $sce) {
         return {
-            'template': '<div><span class="dialog-drawer-toggle"></span>' +
+        	'template': '<div><span class="dialog-drawer-toggle"></span>' +
                         '<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
                         '<div class="dialog-preview-scroll">' +
-                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q={{store.name}}near{{store.address}}&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>' +
+                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>' +
                                                 	'<div class="dialog-movie-info-spacing">' +
                                                 		'<div class="dialog-movie-name-rating-spacing"></div>'+
                                                 			'<span class="dialog-movie-name-rating">' +
