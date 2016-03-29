@@ -38,7 +38,7 @@
             'link': function (scope, element, attr) {
                 var store = $parse(attr.content)(scope); //Get the 'store' object from the content attribute
                 //var htmlContent = '<span class="dialog-store-link">' + store.storeName + '</span>'; //AW - name or storeName
-                var htmlContent = '<span class="dialog-store-link">' + 'PLEASE WORK' + '</span>'; //AW - name or storeName
+                var htmlContent = '<span class="dialog-store-link">' + 'DEBUG dialog-store-directive' + '</span>'; //AW - name or storeName
                 
                 var startY = -1;
                 var delayTimeout = null;
