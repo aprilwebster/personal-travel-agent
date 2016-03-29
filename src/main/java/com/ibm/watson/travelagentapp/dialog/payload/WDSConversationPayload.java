@@ -122,7 +122,7 @@ public class WDSConversationPayload {
     }
 
 	public List<StorePayload> getStores() {
-		System.out.println("DEBUG WDSConversationPayload: getStores called.");
+		System.out.println("DEBUG WDSConversationPayload.getStores: stores are " + stores);
 		return stores;
 	}
 
