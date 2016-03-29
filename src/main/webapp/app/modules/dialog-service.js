@@ -141,15 +141,15 @@
                     //inconsistencies in the API and how it handles new lines
                     watsonResponse = watsonResponse.replace(/\n+/g, '<br/>');
                     }
-                if ($.isArray(response.data.movies)) {
+                /*if ($.isArray(response.data.movies)) {
                     movies = response.data.movies;
-                    $log.debug('DEBUG dialog-service getResponse: the response has movies');
-                }
+                    $log.debug('DEBUG dialog-service.getResponse: the response has movies');
+                }*/
                 if ($.isArray(response.data.stores)) {
                     stores = response.data.stores;
-                    $log.debug('DEBUG dialog-service getResponse: the response has stores');
+                    $log.debug('DEBUG dialog-service.getResponse: the response has stores');
                     firstStore = stores[0];
-                    $log.debug('DEBUG dialog-service getResponse: stores = ' + firstStore.name);
+                    $log.debug('DEBUG dialog-service.getResponse: stores = ' + firstStore.name);
                 }
                 if (!watsonResponse) {
                 	$log.debug('DEBUG dialog-service getResponse: mayday there is no watsonResponse!');
@@ -171,7 +171,7 @@
                 segment = {
                         'message': question,
                         'responses': watsonResponse,
-                        'movies': movies,
+                        //'movies': movies,
                         'stores': stores,
                         'options': htmlLinks
                     };
@@ -222,7 +222,7 @@
                         if (segment.index === index - 1) {
                             segment.responses = lastRes.responses;
                             segment.stores = lastRes.stores;
-                            segment.movies = lastRes.movies;
+                            //segment.movies = lastRes.movies;
                             segment.options = lastRes.options;
                         }
                     });
@@ -236,6 +236,7 @@
          *
          * @private
          */
+        /*
         var getMovieInfo = function (movieName, id, popularity) {
             return initChat().then(function (res) {
                 return $http.get('../api/bluemix/getSelectedMovieDetails', {
@@ -278,11 +279,12 @@
                 });
             });
         };
-
+        */
         
         var getStoreInfo = function (name) {
-        	//$log.debug('DEBUG dialog-service getStoreInfo: function called.  name is ' + name + '. getSelectedStoreDetails called.');
+        	$log.debug('DEBUG dialog-service.getStoreInfo: function called.  name is ' + name);
             return initChat().then(function (res) {
+            	$log.debug('DEBUG dialog-service.getStoreInfo: /api/bluemix/getSelectedStoreDetails called');
                 return $http.get('../api/bluemix/getSelectedStoreDetails', {
                 'params': {
                     'clientId': res.clientId,
@@ -290,22 +292,35 @@
                     'name': name
                 }
             }, function (errorResponse) {
-                var data = errorResponse;
+            	var data = errorResponse;
+            	
+            	$log.debug('DEBUG dialog-service.getStoreInfo: there is an error response');
+                
                 if (errorResponse) {
                     data = data.data;
                 }
             }).then(function (response) {
-                var segment = response.data;
-                if (segment) {
-                    if (segment.stores && segment.stores.length > 0) {
-                        segment = segment.stores[0];
+            	var data = response.data;
+                $log.debug('DEBUG dialog-service.getStoreInfo: have a response');
+                $log.debug('DEBUG dialog-service.getStoreInfo: data is ' + data);
+                $log.debug('DEBUG dialog-service.getStoreInfo: store name is  ' + data.stores[0].name);
+                $log.debug('DEBUG dialog-service.getStoreInfo: wdsResponse is  ' + data.wdsResponse);
+                if (data) {
+                	$log.debug('DEBUG dialog-service.getStoreInfo: there is data');
+                	$log.debug('DEBUG dialog-service.getStoreInfo: data.stores is ' + data.stores);
+                	$log.debug('DEBUG dialog-service.getStoreInfo: data.stores length is ' + data.stores.length);
+                    if (data.stores && data.stores.length > 0) {
+                        data = data.stores[0];
+                        $log.debug('DEBUG dialog-service.getStoreInfo: store is ' + data.name + '(' + data.id + '): ' + data.address);
                     }
-                    segment.commentary = response.data.wdsResponse;
+                    data.commentary = response.data.wdsResponse;
                 }
-                return segment;
+                return data;
                 },
                 function (error) {
                     var segment = error.data;
+                    $log.debug('DEBUG dialog-service.getStoreInfo: response is an error!!');
+                    $log.debug('DEBUG dialog-service.getStoreInfo: segment type is ' + typeof segment);
                     if (segment) {
                         if (error.data.userErrorMessage) {
                             segment.commentary = error.data.userErrorMessage;
@@ -325,7 +340,7 @@
             'getLatestResponse': getLatestResponse,
             'initChat': initChat,
             'query': query,
-            'getMovieInfo': getMovieInfo,
+            //'getMovieInfo': getMovieInfo,
             'getStoreInfo': getStoreInfo
         };
     });    
