@@ -29,7 +29,7 @@
      * - favorites  When in small resolutions the favorites panel is displayed
      *
      */
-    var DialogController = function (_, $rootScope, $scope, $location, $anchorScroll, $timeout, gettextCatalog, dialogService) {
+    var DialogController = function (_, $rootScope, $scope, $location, $anchorScroll, $timeout, $log, gettextCatalog, dialogService) {
         var self = this;
         var placeholderText = null;
         var states = {
@@ -63,12 +63,14 @@
             self.state = _.cloneDeep(state);
         };
 
-        self.favorites = [];
-        self.selectedMovies = [];
-        self.selectedMovie = {};
-        self.showFavorites = false;
-        self.selectedStores = [];
+        //self.favorites = [];
+        //self.selectedMovies = [];
+        //self.selectedMovie = {};
+        //self.showFavorites = false;
+
+        
         self.selectedStore = {};
+        self.selectedStores = [];
 
         
         self.selectStore = function (store) {
@@ -81,14 +83,16 @@
             //$log.debug('DEBUG dialog-controller: in selectStore function. name is ' + name);
             
             if (store) {
-            	//$log.debug('DEBUG dialog-controller: in selectStore function. store is ' + store);
+            	$log.debug('DEBUG dialog-controller.selectStore: name of store selected by user is ' + store.name);
                 name = store.name;
             }
             else {
+            	$log.debug('DEBUG dialog-controller.selectStore: no store provided');
                 return null;
             }
             result = _.find(self.selectedStores, { 'name': name });
             if (result) {
+            	$log.debug('DEBUG dialog-controller.selectStore: ' + store.name + ' is cached in selectedStores array.');
                 keys = _.keys(self.selectedStore);
                 if (keys) {
                     keys.forEach(function (key) {
@@ -114,14 +118,21 @@
                 return result;
             }
             else {
-                query = dialogService.getStoreInfo(name);
+            	$log.debug('DEBUG dialog-controller.selectStore: ' + store.name + ' is NOT cached in selectedStores array.');
+            	$log.debug('DEBUG dialog-controller.selectStore: call dialogService.getStoreInfo to query the backend for this data.');
+            	
+            	query = dialogService.getStoreInfo(name);
                 query.then(function (segment) {
                     if (segment.error === true) {
+                    	$log.debug('DEBUG dialog-controller.selectStore: dialogService.getStoreInfo returned an error; return to chatting state.');
                         setState(states.chatting);
                     }
                     else {
-                        setState(states.preview);
+                    	$log.debug('DEBUG dialog-controller.selectStore: dialogService.getStoreInfo returned data; set state to preview state.');
+                    	setState(states.preview);
                     }
+                    $log.debug('DEBUG dialog-controller.selectStore: query for store info response is ' + segment);
+                    
                     objKeys = _.keys(self.selectedStore);
                     if (objKeys) {
                         objKeys.forEach(function (objKey) {
@@ -130,6 +141,11 @@
                     }
                     _.assign(self.selectedStore, segment);
                     if (segment.error !== true) {
+                    	$log.debug('DEBUG dialog-controller.selectStore: add selected store to selectedStores.');
+                    	$log.debug('DEBUG dialog-controller.selectStore: store name is ' + segment.name);
+                    	$log.debug('DEBUG dialog-controller.selectStore: address is ' + segment.address);
+                    	$log.debug('DEBUG dialog-controller.selectStore: id is ' + segment.id);
+                    	$log.debug('DEBUG dialog-controller.selectStore: store name from self.selectedStore is ' + self.selectedStore.name);
                         self.selectedStores.push(segment);
                     }
                     $('#scrollable-div').animate({ 'scrollTop': $('#scrollable-div')[0].scrollHeight }, 1000);
@@ -158,7 +174,7 @@
          *
          * @public
          */
-        self.selectMovie = function (movie) {
+        /*self.selectMovie = function (movie) {
             var movieName = null;
             var movieId = null;
             var popularity = null;
@@ -230,7 +246,7 @@
                     return self.selectedMovie;
                 });
             }
-        };
+        };*/
         /**
          * Sets the 'selectedMovie' object back to an empty object.
          *
@@ -252,17 +268,25 @@
          * @public
          * @return an array of movies which have been 'favorited' by the end user in the current session.
          */
+        /*
         self.getFavorites = function () {
             return self.favorites;
         };
+        */
 
         /**
          * Returns the movie currently selected by the user.
          * @public
          * @return {object} The movie selected by the user.
          */
+        /*
         self.getCurrentMovie = function () {
             return self.selectedMovie;
+        };
+        */
+        
+        self.getCurrentStore = function () {
+        	return self.selectedStore;
         };
 
         /**
