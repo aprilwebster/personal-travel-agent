@@ -39,11 +39,27 @@
             <div class="dialog-center dialog-center-{{dialogCtrl.state.class}}" ng-include="'modules/dialog-entries.html'"></div>
         </div>
     </div>
+    
+    
     <!--Preview control-->
     <div id="preview-parent" class="dialog-preview-parent" 
             ng-if="dialogCtrl.getCurrentMovie() && dialogCtrl.getCurrentMovie().movieName != null">
         <preview class="dialog-preview" content="dialogCtrl.selectedMovie"></preview>
+        
     </div>
+    <!--RIGHT PANEL Preview control-->
+     
+     <div id="preview-parent" class="dialog-preview-parent" ng-if="dialogCtrl.getCurrentStore() && dialogCtrl.getCurrentStore().name != null"> 
+ 		<!--
+        <iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.youtube.com/embed/nIGtF3J5kn8?controls=0&amp;amp;showinfo=0"></iframe>
+        <iframe width="600" height="450" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/search?q=j%20crew%20near%20505%20cypress%20point%20drive%20mountain%20view%20ca&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8" allowfullscreen></iframe>
+        <iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=j%20crew%20near%20505%20cypress%20point%20drive%20mountain%20view%20ca&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>
+        -->
+        <preview class="dialog-preview" content="dialogCtrl.selectedStore"></preview>
+     </div>
+    
+    
+    
     <!--mobile favorites -->
     
     <!-- 
