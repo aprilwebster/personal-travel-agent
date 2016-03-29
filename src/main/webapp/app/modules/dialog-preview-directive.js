@@ -33,20 +33,25 @@
     .directive('preview', function ($parse, $sce) {
         return {
             'template': '<div><span class="dialog-drawer-toggle"></span>' +
-                        '<favorite class="dialog-favorite-sm" content="{{movie}}"></favorite>' +
+                        '<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
                         '<div class="dialog-preview-scroll">' +
-                        '<iframe id="trailerIFrame" class="dialog-trailer" src="{{trustedUrl}}" allowfullscreen frameborder="0"></iframe>' +
-                        '<h3 id="noTrailerText" class="dialog-trailer-missing dialog-trailer-hidden">No Preview Available</h3>' +
-                        '<div class="dialog-movie-info-spacing"><div class="dialog-movie-name-rating-spacing"></div><span class="dialog-movie-name-rating"><h3 class="dialog-movie-name">{{movie.movieName}}</h3>' +
-                        '<span class="dialog-rating-label"><img src="{{certification}}"></span></span>' +
-                        '<favorite class="dialog-favorite-lg" content="{{movie}}"></favorite>' +
-                        '<h5 class="dialog-release-label" ng-hide="hideReleaseDate">Release date:<span class="dialog-release-date"> {{movie.localizedDate}}</span></h5>' +
+                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q={{store.name}}near{{store.address}}&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>' +
+                                                	'<div class="dialog-movie-info-spacing">' +
+                                                		'<div class="dialog-movie-name-rating-spacing"></div>'+
+                                                			'<span class="dialog-movie-name-rating">' +
+                                                				'<h1 class="dialog-movie-name">DEBUG dialog-preview-directive.js</h1>' +
+                                                				'<h5 class="dialog-movie-name">Store name is {{store.name}}</h5>' +
+                                                				'<h5 class="dialog-movie-name">Address is {{store.address}}</h5>' +
+                                                				'<h5 class="dialog-movie-name">Id is {{store.id}}</h5>' +
+                                                				'<h5 class="dialog-release-label" ng-hide="hideReleaseDate">Release date:' +
+                                                					'<span class="dialog-release-date"> {{store.name}},{{store.address}}</span>' +
+                                                				'</h5>' +
                         '<showtoggle></showtoggle><div class="dialog-rating-spacing"></div><rating></rating></div></div>',
             'restrict': 'E',
             'link': function (scope, element, attr) {
                 var closeButton = null;
-                var date = null;
-                var monthNames = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ];
+                //var date = null;
+                //var monthNames = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ];
                 var resizeContents = function () {
                     var docHeight = $(window).height();
                     var headerHeight = $('#dialog-header').outerHeight(true);
@@ -81,15 +86,28 @@
                 $(window).resize(resizeContents);
                 //<iframe width="560" height="315" src="https://www.youtube.com/embed/vCqiNF94yDw?controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
                 scope.$watch(function () {
-                    return scope.dialogCtrl.getCurrentMovie();
+                    return scope.dialogCtrl.getCurrentStore();
                 }, function () {
-                    var url = null;
-                    var movie = $parse(attr.content)(scope);
+                    //var url = null;
+                    //var movie = $parse(attr.content)(scope);
+                	var store = $parse(attr.content)(scope);
+                	var address = null;
+                	var id = null;
                     var iframe = $('#trailerIFrame');
                     var div = $('#noTrailerText');
                     //_.assign(scope.movie, movie);
-                    scope.movie = movie;
-                    if (!movie.trailerUrl && !movie.movieName && !movie.overview) {
+                    scope.store = store;
+                    
+                    if (store.address) {
+                    	address = store.address;
+                    	scope.address = address;
+                    }
+                    else {
+                    	scope.address = null;
+                    }
+                    
+                    
+                    /*if (!movie.trailerUrl && !movie.movieName && !movie.overview) {
                         return;
                     }
                     if (movie.trailerUrl) {
@@ -128,7 +146,7 @@
                         else if (movie.certification === 'PG-13') {
                             scope.certification = 'images/PG-13.svg';
                         }
-                    }
+                    }*/
                     resizeContents();
                 }, true);
             }
