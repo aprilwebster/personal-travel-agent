@@ -132,6 +132,7 @@
                 var firstStore = null;
                 var segmentStores = null;
                 var segmentFirstStore = null;
+                var customerEmotion = 'neutral';
                 if (watsonResponse) {
                     if (!dialogParser.isMctInPayload(watsonResponse)) {
                         //For 'mct' tags we have to maintain the formatting.
@@ -140,7 +141,7 @@
                     //yes, seems odd, but we are compensating for some
                     //inconsistencies in the API and how it handles new lines
                     watsonResponse = watsonResponse.replace(/\n+/g, '<br/>');
-                    }
+                }
                 /*if ($.isArray(response.data.movies)) {
                     movies = response.data.movies;
                     $log.debug('DEBUG dialog-service.getResponse: the response has movies');
@@ -151,6 +152,12 @@
                     firstStore = stores[0];
                     $log.debug('DEBUG dialog-service.getResponse: stores = ' + firstStore.name);
                 }
+                customerEmotion = response.data.emotion;
+           	 	$log.debug('DEBUG dialog-service.getResponse: the customer emotion is ' + customerEmotion);
+                	
+                
+                
+                
                 if (!watsonResponse) {
                 	$log.debug('DEBUG dialog-service getResponse: mayday there is no watsonResponse!');
                     //Unlikely, but hardcoding these values in case the dialog service/account does
@@ -173,10 +180,12 @@
                         'responses': watsonResponse,
                         //'movies': movies,
                         'stores': stores,
+                        'customerEmotion': customerEmotion,
                         'options': htmlLinks
                     };
                 segmentStores = segment.stores;
-                $log.debug('DEBUG dialog-service getResponse: stores in the segment returned = ' + segmentStores);
+                $log.debug('DEBUG dialog-service.getResponse: stores in the segment returned to the controller is = ' + segmentStores);
+                $log.debug('DEBUG dialog-service.getResponse: customerEmotion in the segment returned to the controller is = ' + segment.customerEmotion);
                 return segment;
             }, function (error) {
                 //Error case!
@@ -206,11 +215,16 @@
             
             return initChat().then(function () {
                 var response = $q.when();
+                var wdsResponse = null;
                 response = response.then(function (res) {
                     if (res) {
                         conversation.push(res);
                     }
-                    return getResponse(input);
+                    
+                    //return getResponse(input);
+                    wdsResponse = getResponse(input);
+                    $log.debug('DEBUG dialogService.query init.');
+                    return wdsResponse;
                 });
                 return response;
             }, function (error) {
@@ -225,6 +239,8 @@
                             segment.stores = lastRes.stores;
                             //segment.movies = lastRes.movies;
                             segment.options = lastRes.options;
+                            segment.customerEmotion = lastRes.customerEmotion;
+                            $log.debug('DEBUG dialogService.query last res has emotion of ' + lastRes.customerEmotion);
                         }
                     });
                 }

@@ -71,7 +71,15 @@
         
         self.selectedStore = {};
         self.selectedStores = [];
-        self.customerEmotion = null;
+        self.customerEmotion = '';
+
+        self.isAngry = function () { 
+        	$log.debug('DEBUG dialog-controller.isAngry: emotion is anger');
+        	return self.emotion === 'angry'; };
+		self.isSad = function () { 
+			return self.emotion === 'sadness'; };
+		self.isNeutral = function () { 
+			return self.emotion === 'neutral'; };
 
         
         self.selectStore = function (store) {
@@ -328,7 +336,9 @@
 
         setState(states.intro);
         //gets the conversation array such that it can be tracked for additions
+        
         self.conversation = dialogService.getConversation();
+        
         self.question = null;
 
         if (!self.placeHolder) {
@@ -354,7 +364,7 @@
             var child = null;
             var timeout = null;
             var footer = null;
-            var customerEmotion = null;
+            //var customerEmotion = null;
             var emotionQuery = null;
             
             $log.debug('DEBUG dialog-controller.submit: function called.');
@@ -367,7 +377,10 @@
             
             emotionQuery = dialogService.getEmotion(self.question);
             emotionQuery.then(function (response) {
+            	$log.debug('DEBUG dialog-controller.submit: emotion from dialogService.getEmotion (global var) is ' + response);
             	_.assign(self.customerEmotion, response);
+            	self.customerEmotion = response;
+            	$log.debug('DEBUG dialog-controller.submit: customer emotion is ' + self.customerEmotion);
                 return self.customerEmotion;
                 /*if (response.error === true) {
                 	$log.debug('DEBUG dialog-controller.submit: dialogService.getEmotion returned an error; colour should be grey.');
@@ -404,17 +417,24 @@
                     }
                 }, 500);
 
+            // Send customer's conversation turn (question, aka input) to the backend to get the WDS response
             dialogService.query(self.question, true).then(function (response) {
                 $('#question').removeAttr('disabled');
                 $('#question').val('');
+                
                 if ($.isArray(response)) {
                     response = response[response.length - 1];
+                    
+                   $log.debug('DEBUG dialogCtrl.submit: emotion from the response (not global var) is ' + response.customerEmotion);
+                    
                     //If we are displaying movies on a mobile device (less than 750 tall) we do
                     //not want to put focus into the field! (we don't want the keyboard popping up)
                     if (!response.movies || $(window).height() > 750) {
                         $('#question').focus();
                     }
                 }
+                
+                
                 //This is not a great hack, but the only fix I could find for compensating
                 //for the width of the scrollbars. When the scrollbar appears it
                 if ($('#scrollable-div').prop('clientHeight') < $('#scrollable-div').prop('scrollHeight')) {

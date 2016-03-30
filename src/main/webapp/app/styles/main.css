@@ -969,7 +969,7 @@ html, body {
     bottom: -10px;
 }
 
-.container .dialog-user-row:after {
+.container .dialog-user-row-neutral:after {
     content: " ";
     position: absolute;
     right: 0px;
@@ -997,6 +997,78 @@ html, body {
     display: inline-block;
     /*background-color: #00abfc;*/
     background-color: #E43054;
+    background-image: url("../images/human_avatar.svg");
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+    background-position: 45%;
+}
+
+/* formatting for the user conversation turn when the text they've entered is 'joy' */
+/* colour is a yellow */
+.container .dialog-user-row-joy:after {
+    content: " ";
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    height: 100%;
+    width: 55px;
+    display: inline-block;
+    /*background-color: #00abfc;*/
+    background-color: #FADB4D;
+    background-image: url("../images/human_avatar.svg");
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+    background-position: 45%;
+}
+
+/* formatting for the user conversation turn when the text they've entered is 'fear' */
+/* colour is a green */
+.container .dialog-user-row-fear:after {
+    content: " ";
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    height: 100%;
+    width: 55px;
+    display: inline-block;
+    /*background-color: #00abfc;*/
+    background-color: #35A450;
+    background-image: url("../images/human_avatar.svg");
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+    background-position: 45%;
+}
+
+/* formatting for the user conversation turn when the text they've entered is 'disgust' */
+/* colour is a purple */
+.container .dialog-user-row-disgust:after {
+    content: " ";
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    height: 100%;
+    width: 55px;
+    display: inline-block;
+    /*background-color: #00abfc;*/
+    background-color: #9F78B6;
+    background-image: url("../images/human_avatar.svg");
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+    background-position: 45%;
+}
+
+/* formatting for the user conversation turn when the text they've entered is 'sadness' */
+/* colour is a blue */
+.container .dialog-user-row-sad:after {
+    content: " ";
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    height: 100%;
+    width: 55px;
+    display: inline-block;
+    /*background-color: #00abfc;*/
+    background-color: #726BC9;
     background-image: url("../images/human_avatar.svg");
     background-repeat: no-repeat;
     background-size: 50% 50%;

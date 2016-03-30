@@ -275,6 +275,7 @@ public class WDSBlueMixProxyResource {
         String errorMessage = null, issue = null;
         String wdsMessage = null;
         JsonObject processedText = null;
+        String customerEmotion = "neutral";
         //JSONObject processedText = null;
         
         System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer conversation turn is " + input);
@@ -291,12 +292,17 @@ public class WDSBlueMixProxyResource {
         try {
 
             // Get the emotions for the customer's conversation turn
-        	HashMap customerEmotions = getEmotionMap(input);
-        	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is " + customerEmotions.toString());
+        	//HashMap customerEmotions = getEmotionMap(input);
+        	//System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is " + customerEmotions.toString());
+        	customerEmotion = getEmotion(input);
+        	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's primary emotion is " + customerEmotion);
         	
+        	
+        	/*
         	if(customerEmotions == null){
         		System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is null");
         	}
+        	*/
         	
         	
         	Map<String, Object> converseParams = createConversationParameterMap(dialog_id,
@@ -337,7 +343,9 @@ public class WDSBlueMixProxyResource {
             	conversationPayload.setClientId(clientId); //$NON-NLS-1$
                 conversationPayload.setConversationId(clientId); //$NON-NLS-1$
                 conversationPayload.setInput(input); //$NON-NLS-1$
+                conversationPayload.setEmotion(customerEmotion); //$NON-NLS-1$
                 conversationPayload.setWdsResponse(processedText.get("WDSMessage").getAsString()); //$NON-NLS-1$
+                
                 //conversationPayload.setWdsResponse(processedText.get("WDSMessage").toString()); //$NON-NLS-1$
                 
                 if (UtilityFunctions.logger.isTraceEnabled()) {
@@ -407,6 +415,7 @@ public class WDSBlueMixProxyResource {
 	                conversationPayload.setClientId(clientId); 
 	                conversationPayload.setConversationId(clientId); 
 	                conversationPayload.setInput(input); 
+	                conversationPayload.setEmotion(customerEmotion); 
 	
 	                // Removed the logger from here - add it back in later on
 
