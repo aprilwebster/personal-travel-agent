@@ -117,7 +117,7 @@
          * @return {object} A JSON object representing a segment in the conversation.
          */
         var getResponse = function (question) {
-        	$log.debug('DEBUG dialog-service: in getResponse function');
+        	$log.debug('DEBUG dialog-service.getResponse: function called.');
             return $http.get('../api/bluemix/postConversation', {
                 'params': {
                     'clientId': clientId,
@@ -202,7 +202,8 @@
                 'message': input,
                 'index': index++
             });
-
+            $log.debug('DEBUG dialog-service.query: function called');
+            
             return initChat().then(function () {
                 var response = $q.when();
                 response = response.then(function (res) {
@@ -227,6 +228,7 @@
                         }
                     });
                 }
+                $log.debug('DEBUG dialog-service.query: conversation is ' + conversation);
                 return conversation;
             });
         };
@@ -280,6 +282,52 @@
             });
         };
         */
+        
+        var getEmotion = function (input) {
+        	$log.debug('DEBUG dialog-service.getEmotion: function called.  input is ' + input);
+            return initChat().then(function (res) {
+            	$log.debug('DEBUG dialog-service.getEmotiono: /api/bluemix/getEmotion called');
+                return $http.get('../api/bluemix/getEmotion', {
+                'params': {
+                    'clientId': res.clientId,
+                    'conversationId': res.conversationId,
+                    'text': input
+                }
+            }, function (errorResponse) {
+            	var data = errorResponse;
+            	
+            	$log.debug('DEBUG dialog-service.getEmotion: there is an error response');
+                
+                if (errorResponse) {
+                    data = data.data;
+                }
+            }).then(function (response) {
+            	var data = response.data;
+                $log.debug('DEBUG dialog-service.getEmotion: have a response');
+                $log.debug('DEBUG dialog-service.getEmotion: data is ' + data);
+                if (data) {
+                	data = data.emotion;
+                    $log.debug('DEBUG dialog-service.getEmotion: emotion is ' + data);
+                }
+                return data;
+                },
+                function (error) {
+                    var segment = error.data;
+                    $log.debug('DEBUG dialog-service.getEmotion: response is an error!!');
+                    $log.debug('DEBUG dialog-service.getEmotion: segment type is ' + typeof segment);
+                    if (segment) {
+                        if (error.data.userErrorMessage) {
+                            segment.commentary = error.data.userErrorMessage;
+                        }
+                        else {
+                            segment.commentary = 'Failed to retrieve store details. Please retry later.';
+                        }
+                    }
+                    segment.error = true;
+                    return segment;
+                });
+            });
+        };
         
         var getStoreInfo = function (name) {
         	$log.debug('DEBUG dialog-service.getStoreInfo: function called.  name is ' + name);
@@ -340,6 +388,7 @@
             'getLatestResponse': getLatestResponse,
             'initChat': initChat,
             'query': query,
+            'getEmotion': getEmotion,
             //'getMovieInfo': getMovieInfo,
             'getStoreInfo': getStoreInfo
         };
