@@ -273,6 +273,8 @@ public class WDSBlueMixProxyResource {
         JsonObject processedText = null;
         //JSONObject processedText = null;
         
+        System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer conversation turn is " + input);
+        
         // Input is null
         if (input == null || input.trim().isEmpty()) {
             errorMessage = Messages.getString("WDSBlueMixProxyResource.SPECIFY_INPUT"); //$NON-NLS-1$
@@ -280,10 +282,20 @@ public class WDSBlueMixProxyResource {
             //UtilityFunctions.logger.error(issue);
             return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
         }
+        
+        // Input is not null - the customer has provided some text in their conversation turn
         try {
 
-            
-            Map<String, Object> converseParams = createConversationParameterMap(dialog_id,
+            // Get the emotions for the customer's conversation turn
+        	HashMap customerEmotions = getEmotionMap(input);
+        	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is " + customerEmotions.toString());
+        	
+        	if(customerEmotions == null){
+        		System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is null");
+        	}
+        	
+        	
+        	Map<String, Object> converseParams = createConversationParameterMap(dialog_id,
             		Integer.parseInt(clientId),Integer.parseInt(conversationId),input);
             Conversation conversation = dialogService.converse(converseParams);
             wdsMessage = StringUtils.join(conversation.getResponse(), " ");
@@ -299,12 +311,15 @@ public class WDSBlueMixProxyResource {
             String wds = processedText.get("WDSMessage").toString();
             String cleanedWds = wds.replace("\"", "");
             
+            // Watson's emotion vector is not required; just the customer's
+            /*
             if (!cleanedWds.trim().isEmpty()) {
             	System.out.println("DEBUG WDSBlueMixProxyResource: wds is " + wds);
             	System.out.println("DEBUG WDSBlueMixProxyResource: cleaned wds is " + cleanedWds);
             	Double anger = getAnger(cleanedWds);
-            	System.out.println("DEBUG WDSBlueMixProxyResource: ANGER LEVEL in client's conversation turn " + anger.toString());
+            	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: ANGER LEVEL in Watson's conversation turn is " + anger.toString());
             }
+            */
             
             
             
@@ -590,19 +605,36 @@ public class WDSBlueMixProxyResource {
  
  private static Double getAnger(String text) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
 
+	Double anger = null;
 	WatsonEmotionServiceProxyResource wesObj = new WatsonEmotionServiceProxyResource();
 	System.out.println("DEBUG WDSBlueMixProxyResource: text to pass to Emotion Service is " + text);
 	
 	if(text.trim().isEmpty()){
 		System.out.println("DEBUG WDSBlueMixProxyResource: text provided to getAnger function is empty");
+	}else{
+		anger = (Double)wesObj.getAnger(text);
+		System.out.println("DEBUG WDSBlueMixProxyResource: anger level is " + anger.toString());
 	}
-    Double anger = (Double)wesObj.getAnger(text);
-
-    System.out.println("DEBUG WDSBlueMixProxyResource: anger level is " + anger.toString());
 
  	return anger;
 	}
  
+ private static HashMap<String,Double> getEmotionMap(String text) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+	HashMap<String,Double> emotionMap = new HashMap<String,Double>();
+	WatsonEmotionServiceProxyResource wesObj = new WatsonEmotionServiceProxyResource();
+	System.out.println("DEBUG WDSBlueMixProxyResource.getEmotionMap: text to pass to emotion service is " + text);
+	
+	if(text.trim().isEmpty()){
+		emotionMap = null;
+		System.out.println("DEBUG WDSBlueMixProxyResource.getEmotionMap: text is empty");
+	}else{
+		emotionMap = (HashMap<String,Double>)wesObj.getEmotionMap(text);
+		System.out.println("DEBUG WDSBlueMixProxyResource: emotion map is " + emotionMap.toString());
+	}
+	
+ 	return emotionMap;
+	}
  
 /*private String getClosestClothingStoreAddress(String fromAddress, String clothingStore, String distance) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
 
