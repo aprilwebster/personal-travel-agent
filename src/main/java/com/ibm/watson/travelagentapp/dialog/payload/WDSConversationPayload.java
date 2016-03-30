@@ -34,8 +34,17 @@ public class WDSConversationPayload {
     private Integer totalPages;
     private Integer numMovies;
     private Integer numStores;
+    private String emotion;
 
-    /**
+    public String getEmotion() {
+		return emotion;
+	}
+
+	public void setEmotion(String emotion) {
+		this.emotion = emotion;
+	}
+
+	/**
      * @return  the conversation id which is unique to a conversation in WDS
      */
     public String getConversationId() {
