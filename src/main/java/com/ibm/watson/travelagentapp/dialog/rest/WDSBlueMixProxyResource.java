@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -40,6 +42,8 @@ import com.ibm.watson.travelagentapp.webservices.watson.WatsonEmotionServiceProx
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpException;
 import org.apache.http.client.ClientProtocolException;
+import org.json.simple.parser.ParseException;
+
 import com.google.gson.JsonArray;
 
 import com.google.gson.JsonParser;
@@ -636,6 +640,27 @@ public class WDSBlueMixProxyResource {
  	return emotionMap;
 	}
  
+ private static String getEmotion(String text) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
+
+		String emotion = "neutral";
+		Double maxValue = null;
+		HashMap<String,Double> emotionMap = getEmotionMap(text);
+		
+		Entry<String,Double> maxEntry = null;
+
+		for(Entry<String,Double> entry : emotionMap.entrySet()) {
+		    if (maxEntry == null || entry.getValue() > maxEntry.getValue()) {
+		        maxEntry = entry;
+		    }
+		}
+		if(maxEntry.getValue() >= 0.5){
+			emotion = maxEntry.getKey();
+		}
+		System.out.println("DEBUG WDXBlueMixProxyResource.getEmotion: emotion is " + emotion);
+ 		return emotion;
+}
+ 
+ 
 /*private String getClosestClothingStoreAddress(String fromAddress, String clothingStore, String distance) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
 
 		GoogleMapsProxyResource gmObj = new GoogleMapsProxyResource();
@@ -797,6 +822,7 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
     
     
     
+    
     /**
      * Returns selected movie details
      * <p>
@@ -857,6 +883,40 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
         }
         return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
     }
+    
+    
+    @GET
+    @Path("/getEmotion")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response get(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
+            @QueryParam("text") String text) throws IOException, HttpException, WatsonTheatersException, ParseException, URISyntaxException {
+
+    	System.out.println("DEBUG WDSBlueMixProxyResource.getEmotion: called with text " + text);
+    	
+    	String emotion = getEmotion(text);
+    	System.out.println("DEBUG WDSBlueMixProxyResource.getEmotion: emotion is " + emotion);
+    	
+    	
+    	
+        String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
+        String issue = null;
+        WDSConversationPayload conversationPayload = new WDSConversationPayload();
+        try {
+        	Map<String, Object> converseParams = new HashMap<String, Object>();
+            converseParams.put("dialog_id", dialog_id);
+            converseParams.put("client_id", Integer.parseInt(clientId));
+            converseParams.put("conversation_id", Integer.parseInt(conversationId));
+            conversationPayload.setEmotion(emotion);
+            return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
+
+        } catch (IllegalStateException e) {
+            issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
+            UtilityFunctions.logger.error(issue, e);
+        }
+        return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
+    }
+    
+    
     
 
     /**
