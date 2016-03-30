@@ -977,7 +977,26 @@ html, body {
     height: 100%;
     width: 55px;
     display: inline-block;
-    background-color: #00abfc;
+    /*background-color: #00abfc;*/
+    background-color: #808080;
+    background-image: url("../images/human_avatar.svg");
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+    background-position: 45%;
+}
+
+/* formatting for the user conversation turn when the text they've entered is 'angry' */
+/* colour is a red */
+.container .dialog-user-row-angry:after {
+    content: " ";
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    height: 100%;
+    width: 55px;
+    display: inline-block;
+    /*background-color: #00abfc;*/
+    background-color: #E43054;
     background-image: url("../images/human_avatar.svg");
     background-repeat: no-repeat;
     background-size: 50% 50%;
