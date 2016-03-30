@@ -71,6 +71,7 @@
         
         self.selectedStore = {};
         self.selectedStores = [];
+        self.customerEmotion = null;
 
         
         self.selectStore = function (store) {
@@ -346,16 +347,49 @@
         }
 
         /**
-         * Submits the current question using dialogService
+         * Submits the customer's conversation turn using dialogService
+         * TODO - this should not be 'question' - misleading variable name
          */
         self.submit = function () {
             var child = null;
             var timeout = null;
             var footer = null;
+            var customerEmotion = null;
+            var emotionQuery = null;
+            
+            $log.debug('DEBUG dialog-controller.submit: function called.');
+            
+            
             if (!self.question || self.question.length === 0) {
                 $('#question').focus();
                 return;
             }
+            
+            emotionQuery = dialogService.getEmotion(self.question);
+            emotionQuery.then(function (response) {
+            	_.assign(self.customerEmotion, response);
+                return self.customerEmotion;
+                /*if (response.error === true) {
+                	$log.debug('DEBUG dialog-controller.submit: dialogService.getEmotion returned an error; colour should be grey.');
+
+                }
+                else {
+                	$log.debug('DEBUG dialog-controller.selectStore: dialogService.getEmotion returned an emotion; colour should match emotion.');
+                }
+                $log.debug('DEBUG dialog-controller.selectStore: query for emotion returned ' + response);
+                
+                
+                //_.assign(self.customerEmotion, response);
+                //return self.customerEmotion;
+                return 'anger';*/
+            });
+            
+            
+            
+            
+            
+            $log.debug('DEBUG dialog-controller.submit: conversation turn is ' + self.question);
+            
             if (self.conversation.length > 1 && self.conversation[self.conversation.length - 1].options) {
                 self.conversation[self.conversation.length - 1].options = null;
             }
