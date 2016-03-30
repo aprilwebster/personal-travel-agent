@@ -29,7 +29,15 @@ public class WatsonEmotionServiceProxyResource{
     private static final String GET_EMOTION_PATH = "calls/text/TextGetEmotion";
     private static final String RESPONSE_TYPE = "json";
     private static final String ALCHEMY_API_KEY = "b145d4ee295400cba307da9a11c6bde6c4a9866c";
-  
+    
+    
+    private static final String EMOTIONS = "docEmotions";
+    private static final String ANGER = "anger";
+    private static final String JOY = "joy";
+    private static final String SADNESS = "sadness";
+    private static final String DISGUST = "disgust";
+    private static final String FEAR = "fear";
+    
     
 	public static void main(String[] args) throws IOException, ParseException, URISyntaxException{
 			
@@ -52,10 +60,10 @@ public class WatsonEmotionServiceProxyResource{
 
 		HttpEntity entity = response.getEntity();
 	    String strResponse = EntityUtils.toString(entity);
-	    System.out.println(strResponse);
+	    System.out.println("DEBUG WatsonEmotionServiceProxyResource.getAnger: emotion vector is " + strResponse);
 	     
-	    String EMOTIONS = "docEmotions";
-	    String ANGER = "anger";
+	    //String EMOTIONS = "docEmotions";
+	    //String ANGER = "anger";
 
 	    JSONParser parser=new JSONParser();
 	    Object p = parser.parse(strResponse);
@@ -69,6 +77,39 @@ public class WatsonEmotionServiceProxyResource{
 
 	}
 
+public static HashMap<String,Double> getEmotionMap(String text) throws ClientProtocolException, IOException, ParseException, URISyntaxException{
+		
+		Hashtable<String, String> uriParamsHash = new Hashtable<String, String>();
+		uriParamsHash.put("text", text);
+		uriParamsHash.put("outputMode", "json");
+		uriParamsHash.put("apikey", ALCHEMY_API_KEY);
+
+		URI uri = buildUriStringFromParamsHash("https", WATSON_BASE_URL, GET_EMOTION_PATH, uriParamsHash);	
+		HttpResponse response = httpGet(uri);
+
+		HttpEntity entity = response.getEntity();
+	    String strResponse = EntityUtils.toString(entity);
+	    //System.out.println(strResponse);
+	     
+
+	    HashMap<String,Double> emotionMap = new HashMap<String,Double>();
+	    JSONParser parser=new JSONParser();
+	    Object p = parser.parse(strResponse);
+	    
+	    JSONObject jsonResponse =(JSONObject)p;
+	    JSONObject emotions = (JSONObject) jsonResponse.get(EMOTIONS);
+	    //Double anger = Double.parseDouble((String) emotions.get(ANGER));
+	    System.out.println("DEBUG WatsonEmotionServiceProxyResource.getEmotionMap: emotions are " + emotions.toString());
+	    
+	    emotionMap.put(ANGER, Double.parseDouble((String) emotions.get(ANGER)));
+	    emotionMap.put(JOY, Double.parseDouble((String) emotions.get(JOY)));
+	    emotionMap.put(SADNESS, Double.parseDouble((String) emotions.get(SADNESS)));
+	    emotionMap.put(FEAR, Double.parseDouble((String) emotions.get(FEAR)));
+	    emotionMap.put(DISGUST, Double.parseDouble((String) emotions.get(DISGUST)));
+	    
+	    return emotionMap;
+
+	}
 	
 	private static URI buildUriStringFromParamsHash(String scheme, String baseurl, String path, Hashtable<String, String> uriParamsHash) throws URISyntaxException {
         URIBuilder urib = new URIBuilder();
