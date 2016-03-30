@@ -34,20 +34,24 @@
     .directive('preview', function ($parse, $sce) {
         return {
         	'template': '<div><span class="dialog-drawer-toggle"></span>' +
-                        '<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
+                        //'<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
                         '<div class="dialog-preview-scroll">' +
-                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>' +
-                                                	'<div class="dialog-movie-info-spacing">' +
-                                                		'<div class="dialog-movie-name-rating-spacing"></div>'+
-                                                			'<span class="dialog-movie-name-rating">' +
-                                                				'<h1 class="dialog-movie-name">DEBUG dialog-preview-directive.js</h1>' +
-                                                				'<h5 class="dialog-movie-name">Store name is {{store.name}}</h5>' +
-                                                				'<h5 class="dialog-movie-name">Address is {{store.address}}</h5>' +
-                                                				'<h5 class="dialog-movie-name">Id is {{store.id}}</h5>' +
-                                                				'<h5 class="dialog-release-label" ng-hide="hideReleaseDate">Release date:' +
-                                                					'<span class="dialog-release-date"> {{store.name}},{{store.address}}</span>' +
-                                                				'</h5>' +
-                        '<showtoggle></showtoggle><div class="dialog-rating-spacing"></div><rating></rating></div></div>',
+                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
+                        
+                        //+	'<div class="dialog-movie-info-spacing">' +
+                        //    	'<div class="dialog-movie-name-rating-spacing"></div>'+
+                        //        	'<span class="dialog-movie-name-rating">' +
+                        //            	'<h1 class="dialog-movie-name">DEBUG dialog-preview-directive.js</h1>' +
+                        //                '<h5 class="dialog-movie-name">Store name is {{store.name}}</h5>' +
+                        //                '<h5 class="dialog-movie-name">Address is {{store.address}}</h5>' +
+                        //                '<h5 class="dialog-movie-name">Id is {{store.id}}</h5>' +
+                        //                '<h5 class="dialog-release-label" ng-hide="hideReleaseDate">Release date:' +
+                        //                '<span class="dialog-release-date"> {{store.name}},{{store.address}}</span>' +
+                        //                '</h5>' +
+                        //                '<showtoggle></showtoggle>' +
+                        //                '<div class="dialog-rating-spacing"></div>' + 
+                        //        '</div>' + 
+                        // '</div>'             
             'restrict': 'E',
             'link': function (scope, element, attr) {
                 var closeButton = null;
@@ -107,47 +111,6 @@
                     	scope.address = null;
                     }
                     
-                    
-                    /*if (!movie.trailerUrl && !movie.movieName && !movie.overview) {
-                        return;
-                    }
-                    if (movie.trailerUrl) {
-                        url = $sce.trustAsResourceUrl(movie.trailerUrl);
-                        scope.trustedUrl = url;
-                        iframe.removeClass('dialog-trailer-hidden');
-                        div.addClass('dialog-trailer-hidden');
-                    }
-                    else {
-                        scope.trustedUrl = null;
-                        iframe.addClass('dialog-trailer-hidden');
-                        div.removeClass('dialog-trailer-hidden');
-                    }
-                    if (movie.releaseDate) {
-                        date = new Date(movie.releaseDate);
-                        movie.localizedDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
-                        scope.hideReleaseDate = false;
-                    }
-                    else {
-                        scope.hideReleaseDate = true;
-                    }
-                    if (!movie.certification || movie.certification.length === 0) {
-                        movie.certification = 'NR';
-                        scope.certification = 'images/NR.svg';
-                    }
-                    else {
-                        if (movie.certification === 'R') {
-                            scope.certification = 'images/R.svg';
-                        }
-                        else if (movie.certification === 'G') {
-                            scope.certification = 'images/G.svg';
-                        }
-                        else if (movie.certification === 'PG') {
-                            scope.certification = 'images/PG.svg';
-                        }
-                        else if (movie.certification === 'PG-13') {
-                            scope.certification = 'images/PG-13.svg';
-                        }
-                    }*/
                     resizeContents();
                 }, true);
             }
