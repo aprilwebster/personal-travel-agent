@@ -357,49 +357,37 @@ public class WDSBlueMixProxyResource {
                 return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
             } 
             
-            // PARAMETERS ARE FOUND IN THE WDS RESPONSE - there's a query to execute
+            // Query requred
             else {
                 // Extract the query parameters from the processed WDS Response
                 JsonObject paramsObj = processedText.getAsJsonObject("Params"); 
-            	//JSONObject paramsObj = (JSONObject) processedText.get("Params"); 
                 System.out.println("DEBUG WDSBlueMixProxyResource: query parameters are " + paramsObj);
                 
                 // If the query parameters include a clothing store preference variable, the query is a X	
-            	// Refactor these variable names!! - the aren't descriptive enough	
                 String prompt;
                 List<NameValue> nameValues;
                 
-                
-                // PERSONALITY PROFILE QUERY - If the query parameters include a twitter handle, the query is a personality insights query
-                if(paramsObj.has("Twitter_Handle")){
-                //if(paramsObj.containsKey("Twitter_Handle")){
-                	System.out.println("DEBUG WDSBlueMixProxyResource: query parameters include a Twitter_Handle");
+                // personality profile query
+                 if(paramsObj.has("Twitter_Handle")){
                 	String twitterHandle = paramsObj.get("Twitter_Handle").getAsString();
-                	//String twitterHandle = paramsObj.get("Twitter_Handle").toString();
 	                System.out.println("DEBUG WDSBlueMixProxyResource: twitter handle is " + twitterHandle);
-                    
-	                // Get the personality profile - call the Twitter Analyzer
+
 	                String personalityProfile = "";
-	                //JSONObject personalityProfile = new JSONObject();
 	                TwitterAnalyzer twitterAnalyzer = new TwitterAnalyzer();  
             		try {
             			personalityProfile = twitterAnalyzer.getPersonalityProfile(twitterHandle);
-            			//personalityProfile = twitterAnalyzer.getPersonalityProfile("@Adele");
             		} 
             		catch (Exception e1) {
-            			// TODO Auto-generated catch block
             			e1.printStackTrace();
             		}
-            		
-            		System.out.println("DEBUG: " + personalityProfile.getClass().getName());
+
             		System.out.println("DEBUG WDSBlueMixProxyResource: the personality profile is " + personalityProfile);
             		
             		
             		// Issue updateProfile request to the WDS to update the profile variable - Personality Profile - for the client/dialog
 	                // TODO: use a better variable name that nameValues - not descriptive at all
 	                nameValues = new ArrayList<NameValue>();
-	                nameValues.add(new NameValue("Personality_Profile", personalityProfile)); //$NON-NLS-1$
-	                //nameValues.add(new NameValue("Personality_Profile", personalityProfile.toJSONString()));
+	                nameValues.add(new NameValue("Personality_Profile", personalityProfile));
 	                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
 	                System.out.println("DEBUG: profile variable Personality_Profile update request sent to WDS");
 	                
@@ -424,22 +412,25 @@ public class WDSBlueMixProxyResource {
             		
             		
             		
-                } // END PERSONALITY PROFILE QUERY
+                }
             	
                 
 
-                // MATCHING CLOTHING STORE QUERY
+                // matching clothing stores query
                 if(paramsObj.has("Personality_Profile")){
-                //if(paramsObj.containsKey("Personality_Profile")){
-	                System.out.println("DEBUG: query param is Personality_Profile, so do a Clothing Store Match query.");
+	                System.out.println("DEBUG: query param is Personality_Profile, do a Clothing Store Match query.");
 
 	                String personalityProfile = paramsObj.get("Personality_Profile").toString();
 	                System.out.println("DEBUG: personality profile is " + personalityProfile);
 	                
-	                
+	                // Previously found the top matching store
 	                String matchingStore = "";
 	                matchingStore = new Similarity().getClosestMatchingStore(personalityProfile);
 	                System.out.println("DEBUG: matching store from Similarity.getClosestMatchingStore is " + matchingStore);
+	                
+	                // NEW - find the top five matching stores
+	                ArrayList<String> top5Stores = new Similarity().getTopNMatchingStores(personalityProfile, 5);
+	                System.out.println(top5Stores);
 	                
 			        
 			        // Issue updateProfile request to the WDS to update the profile variable - Clothing_Store_Location - for the client/dialog
@@ -475,54 +466,6 @@ public class WDSBlueMixProxyResource {
 		        if(paramsObj.has("Clothing_Store") && paramsObj.has("Current_Address")){  
 		        	String clothingStore = paramsObj.get("Clothing_Store").toString();
 		        	String startingAddress = paramsObj.get("Current_Address").toString();
-		        	
-		        	/*
-		        	String distanceString = "";
-		        	String distanceValue = "";
-		        	if(paramsObj.has("Distance")){
-	        			distanceString = paramsObj.get("Distance").toString();
-	        			
-	        			String cleanedDistanceString = distanceString.replace("\"", "");
-	        			
-	        			byte[] distanceByteArray = distanceString.getBytes(Charset.forName("UTF-8"));
-	        			String distanceByteArray_toString = Arrays.toString(distanceByteArray);
-	        			String distanceStringNew = new String(distanceByteArray, Charset.forName("UTF-8"));
-	        			
-	        			if(DEBUG){
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array specified is " + distanceByteArray);
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array converted back to string is " + distanceByteArray_toString);
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array converted back to string to get a string is " + distanceStringNew);
-		        		}
-	        			
-	        			distanceString = distanceString.trim();
-	        			
-	        			byte[] walkingDistanceByteArray = walking_distance.getBytes(Charset.forName("UTF-8"));
-	        			String walkingDistanceByteArray_toString = Arrays.toString(walkingDistanceByteArray);
-	        			String walkingDistanceStringNew = new String(walkingDistanceByteArray, Charset.forName("UTF-8"));
-	        			
-	        			if(DEBUG){
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: walking distance byte array specified is " + walkingDistanceByteArray);
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: walking distance byte array converted back to string is " + walkingDistanceByteArray_toString);
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: distance byte array converted back to string to get a string is " + walkingDistanceStringNew);
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: cleaned distance specified is " + cleanedDistanceString);
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: distanceString type is " + cleanedDistanceString.getClass().getName());
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: string equals" + cleanedDistanceString.equals(walking_distance));
-		        			System.out.println("DEBUG WDSBlueMixProxyResource: string equals" + cleanedDistanceString.equalsIgnoreCase("walking distance"));
-	        			}
-	        			
-	        			if(cleanedDistanceString.equals("walking distance")){
-	        				distanceValue = "500";
-	        				System.out.println("DEBUG WDSBlueMixProxyResource: walking distance specified.  Distance is " + distanceValue);
-	    	                
-	        			}else{
-	        				distanceValue = "10000";
-	        				System.out.println("DEBUG WDSBlueMixProxyResource: taxi ride specified.  Distance is " + distanceValue);
-	        			}
-	        			//System.out.println("DEBUG after get distance preference");
-	        			System.out.println("DEBUG: distance preferred is " + distanceValue);
-	        		}
-	        		*/
-		        	
 	                System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store requested. Clothing store preference is " + clothingStore);
 	                
 	                
@@ -542,10 +485,7 @@ public class WDSBlueMixProxyResource {
 	                System.out.println("DEBUG WDSBlueMixProxyResource: closest grocery store is " + groceryStoreName + " and is located at " + groceryStoreAddress);
 	                
 	                
-	                
-	                
-	                // Issue updateProfile request to the WDS to update the profile variable - Clothing_Store_Location - for the client/dialog
-	                
+	                // Tell WDS to update the profile with the included profile variable values
 	                nameValues = new ArrayList<NameValue>();
 	                nameValues.add(new NameValue("Clothing_Store_Location", closestClothingStoreAddress)); //$NON-NLS-1$
 	                nameValues.add(new NameValue("Clothing_Store_Distance", distCurrentLocnToClothingStore));
@@ -563,6 +503,10 @@ public class WDSBlueMixProxyResource {
 	                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
 	
 	                // Build the List<StorePayload> stores to add to the WDSConversationPayload
+	                //ArrayList<String> top5Stores = new Similarity().getTopNMatchingStores(personalityProfile, 5);
+	                //System.out.println(top5Stores);
+	                
+	                
 	                List<StorePayload> stores = new ArrayList<>();
 	                StorePayload s1 = new StorePayload();
 	                s1.setId("1");

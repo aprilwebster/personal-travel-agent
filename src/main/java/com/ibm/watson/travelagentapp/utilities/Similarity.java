@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,12 +14,16 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.json.simple.*;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+import com.google.common.collect.Lists;
 
 public class Similarity {
 	private static final Boolean DEBUG = false;
@@ -55,6 +60,71 @@ public class Similarity {
 			System.out.println("DEBUG Similarity: store" + twitteridToStorenameMap.toString());
 		}
 	}
+	
+	
+	public ArrayList<String> getTopNMatchingStores(String inputProfileJson, Integer n) throws ParseException, IOException{
+		
+		Map<String,Double> inputBig5Map = getBig5Map(inputProfileJson);
+		
+        Map<String, Map<String, Double>> storesBig5Map = getStoresBig5Map();
+        
+        HashMap<String,Double> similarityScores = new HashMap<String,Double>();
+        ArrayList<String> topNStores = new ArrayList<String>();
+        
+        Iterator storesIt = storesBig5Map.entrySet().iterator();
+        while (storesIt.hasNext()) {
+        	Map.Entry store = (Map.Entry)storesIt.next();
+        	String storeName = (String) store.getKey();
+        	Map<String,Double> storeBig5Map = (Map<String,Double>)store.getValue();
+        	
+        	Double storeSimilarity = getEuclideanSimilarity(storeBig5Map,inputBig5Map);
+        	similarityScores.put(storeName, storeSimilarity);
+        }
+        
+        Map<String,Double> sortedSimilarityScores = sortByValues(similarityScores);
+        System.out.println(sortedSimilarityScores);
+        List<String> list = new LinkedList<String>(sortedSimilarityScores.keySet());
+        List<String> reverseList = Lists.reverse(list); 
+        System.out.println("reversed list: " + reverseList);
+        
+        //List<String> topNStoresById = reverseList.subList(reverseList.size() - n, reverseList.size());
+        List<String> topNStoresById = reverseList.subList(0, n);
+        System.out.println(topNStoresById);
+        
+        
+        for(int i=0;i< n; i++){
+        	String storeId = topNStoresById.get(i);
+        	String storeName = getStoreName(storeId);
+        	System.out.println(storeId +" "+ storeName);
+        	topNStores.add(i, storeName);
+
+        }
+        
+        //getStoreName(id)
+        
+        return topNStores;
+        
+        
+
+	}
+
+	private static HashMap<String,Double> sortByValues(HashMap<String,Double> map) { 
+	       List list = new LinkedList(map.entrySet());
+	       // Defined Custom Comparator here
+	       Collections.sort(list, new Comparator() {
+	            public int compare(Object o1, Object o2) {
+	               return ((Comparable) ((Map.Entry) (o1)).getValue())
+	                  .compareTo(((Map.Entry) (o2)).getValue());
+	            }
+	       });
+
+	       HashMap<String,Double> sortedHashMap = new LinkedHashMap<String,Double>();
+	       for (Iterator it = list.iterator(); it.hasNext();) {
+	              Map.Entry entry = (Map.Entry) it.next();
+	              sortedHashMap.put((String)entry.getKey(), (Double)entry.getValue());
+	       } 
+	       return sortedHashMap;
+	  }
 	
 	
 	public String getClosestMatchingStore(String inputProfileJson) throws ParseException, IOException{
@@ -94,6 +164,7 @@ public class Similarity {
 							.compareTo(((Map.Entry) (o2)).getValue());
 			}
 		});
+		System.out.println("DEBUG Similarity: ");
 	 
 		String closestMatchingStore = new String();
 		Double highestScore = 0.0;
