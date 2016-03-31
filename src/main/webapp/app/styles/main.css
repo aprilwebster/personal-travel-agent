@@ -969,7 +969,7 @@ html, body {
     bottom: -10px;
 }
 
-.container .dialog-user-row-neutral:after {
+.container .dialog-user-row:after {
     content: " ";
     position: absolute;
     right: 0px;
@@ -985,9 +985,9 @@ html, body {
     background-position: 45%;
 }
 
-/* formatting for the user conversation turn when the text they've entered is 'angry' */
+/* formatting for the user conversation turn when the text they've entered is 'anger' */
 /* colour is a red */
-.container .dialog-user-row-angry:after {
+.container .dialog-user-row-anger:after {
     content: " ";
     position: absolute;
     right: 0px;

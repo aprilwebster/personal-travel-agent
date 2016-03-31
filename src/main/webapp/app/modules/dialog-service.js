@@ -254,55 +254,12 @@
          *
          * @private
          */
-        /*
-        var getMovieInfo = function (movieName, id, popularity) {
-            return initChat().then(function (res) {
-                return $http.get('../api/bluemix/getSelectedMovieDetails', {
-                'params': {
-                    'clientId': res.clientId,
-                    'conversationId': res.conversationId,
-                    'movieName': movieName,
-                    'movieId': id
-                }
-            }, function (errorResponse) {
-                var data = errorResponse;
-                if (errorResponse) {
-                    data = data.data;
-                }
-            }).then(function (response) {
-                var segment = response.data;
-                if (segment) {
-                    if (segment.movies && segment.movies.length > 0) {
-                        segment = segment.movies[0];
-                    }
-                    if (segment.stores && segment.stores.length > 0) {
-                        segment = segment.stores[0];
-                    }
-                    segment.commentary = response.data.wdsResponse;
-                }
-                return segment;
-                },
-                function (error) {
-                    var segment = error.data;
-                    if (segment) {
-                        if (error.data.userErrorMessage) {
-                            segment.commentary = error.data.userErrorMessage;
-                        }
-                        else {
-                            segment.commentary = 'Failed to retrieve movie details. Please retry later.';
-                        }
-                    }
-                    segment.error = true;
-                    return segment;
-                });
-            });
-        };
-        */
+
         
         var getEmotion = function (input) {
         	$log.debug('DEBUG dialog-service.getEmotion: function called.  input is ' + input);
             return initChat().then(function (res) {
-            	$log.debug('DEBUG dialog-service.getEmotiono: /api/bluemix/getEmotion called');
+            	$log.debug('DEBUG dialog-service.getEmotion: /api/bluemix/getEmotion called');
                 return $http.get('../api/bluemix/getEmotion', {
                 'params': {
                     'clientId': res.clientId,
@@ -319,7 +276,7 @@
                 }
             }).then(function (response) {
             	var data = response.data;
-                $log.debug('DEBUG dialog-service.getEmotion: have a response');
+                //$log.debug('DEBUG dialog-service.getEmotion: have a response');
                 $log.debug('DEBUG dialog-service.getEmotion: data is ' + data);
                 if (data) {
                 	data = data.emotion;

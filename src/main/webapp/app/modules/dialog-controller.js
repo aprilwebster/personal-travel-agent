@@ -375,6 +375,8 @@
                 return;
             }
             
+            //'global' query - the response won't be in an entry (3/30/16)
+            /*
             emotionQuery = dialogService.getEmotion(self.question);
             emotionQuery.then(function (response) {
             	$log.debug('DEBUG dialog-controller.submit: emotion from dialogService.getEmotion (global var) is ' + response);
@@ -394,8 +396,8 @@
                 
                 //_.assign(self.customerEmotion, response);
                 //return self.customerEmotion;
-                return 'anger';*/
-            });
+                return 'anger';
+            });*/
             
             
             
@@ -417,6 +419,7 @@
                     }
                 }, 500);
 
+            
             // Send customer's conversation turn (question, aka input) to the backend to get the WDS response
             dialogService.query(self.question, true).then(function (response) {
                 $('#question').removeAttr('disabled');
@@ -433,6 +436,7 @@
                         $('#question').focus();
                     }
                 }
+       
                 
                 
                 //This is not a great hack, but the only fix I could find for compensating

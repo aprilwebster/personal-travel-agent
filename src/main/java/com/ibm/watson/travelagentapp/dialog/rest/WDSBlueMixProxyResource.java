@@ -460,6 +460,7 @@ public class WDSBlueMixProxyResource {
 	                conversationPayload.setWdsResponse(wdsMessage);
 	                conversationPayload.setClientId(clientId); 
 	                conversationPayload.setConversationId(clientId); 
+	                conversationPayload.setEmotion(customerEmotion);
 	                conversationPayload.setInput(input); 
 	
 	                // Removed the logger from here - add it back in later on
@@ -588,6 +589,7 @@ public class WDSBlueMixProxyResource {
 	                System.out.println("DEBUG WDSBlueMixProxyResource: clientId is " + conversationPayload.getClientId());
 	                conversationPayload.setInput(input); 
 	                conversationPayload.setStores(storesList);
+	                conversationPayload.setEmotion(customerEmotion);
 	                System.out.println("DEBUG WDSBlueMixProxyResource: 1st store is " + conversationPayload.getStores().get(0).getName());
 	
 	                // Removed the logger from here - add it back in later on

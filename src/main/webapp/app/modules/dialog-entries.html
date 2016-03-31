@@ -28,30 +28,33 @@
             </div> -->
             <!-- Actual conversation between user and system -->
             <div ng-animate-children class="dialog-entry row" ng-repeat="entry in dialogCtrl.conversation">
-                <!--Display user entered text -->
                 
                 <!--                    CUSTOMER CONVERSATION TURN                         -->
-                <!--  
-                <div ng-if="entry.message && entry.customerEmotion==='neutral'" class="dialog-entry-row dialog-user-row-neutral">
+
+                <div ng-if="entry.message && entry.customerEmotion==='neutral'" class="dialog-user-row dialog-user-row-neutral">
                     <div class="dialog-segment-bkg">
-                    	<span class="dialog-row-text">
-                        entry message: {{entry.message}}
-                        customer emotion (from ctrl): {{dialogCtrl.customerEmotion}} 
-                        customer emotion (from entry): {{entry.customerEmotion}}</span> 
+                    <!--  <span class="dialog-row-text">{{entry.message}} ({{entry.customerEmotion}})</span> -->
+                    <span class="dialog-row-text">{{entry.message}}</span>
                     </div>
                 </div>
-                 <div ng-if="entry.message && entry.customerEmotion==='sadness'" class="dialog-entry-row dialog-user-row-sad">
+                 <div ng-if="entry.message && entry.customerEmotion==='sadness'" class="dialog-user-row dialog-user-row-sad">
                     <div class="dialog-segment-bkg">
-                    	<span class="dialog-row-text">
-                        entry message: {{entry.message}}
-                        customer emotion (from ctrl): {{dialogCtrl.customerEmotion}} 
-                        customer emotion (from entry): {{entry.customerEmotion}}</span> 
+                    <span class="dialog-row-text">{{entry.message}}.</span>
                     </div>
                 </div>
-                -->
-                <div ng-if="entry.message" class="dialog-entry-row">
+                 <div ng-if="entry.message && entry.customerEmotion==='anger'" class="dialog-user-row dialog-user-row-anger">
                     <div class="dialog-segment-bkg">
-                    	<span class="dialog-row-text">{{entry.message}} ({{entry.customerEmotion}})</span> 
+                    <span class="dialog-row-text">{{entry.message}}.</span>
+                    </div>
+                </div>
+                <div ng-if="entry.message && entry.customerEmotion==='joy'" class="dialog-user-row dialog-user-row-joy">
+                    <div class="dialog-segment-bkg">
+                    <span class="dialog-row-text"> {{entry.message}}</span>
+                    </div>
+                </div>
+                <div ng-if="entry.message && entry.customerEmotion==='disgust'" class="dialog-user-row dialog-user-row-disgust">
+                    <div class="dialog-segment-bkg">
+                    <span class="dialog-row-text">{{entry.message}}</span>
                     </div>
                 </div>
                 
@@ -67,9 +70,10 @@
                 <div ng-class="!entry.responses ? 'watson-thinking' : 'no-class'">
                     <div class="dialog-watson-row" ng-if="entry != null && entry.responses != null">
                         <div class="dialog-segment-bkg">
-                            <span class="dialog-row-text" ng-bind-html="entry.responses ">
-                            	
-                            </span>
+                        	
+                            <div class="dialog-row-text" ng-bind-html="entry.responses "></div>
+                            <!--  <div ng-if="entry.customerEmotion==='anger'">I'd be annoyed as well.</div> -->
+                            
                         </div>
                     </div><hr class="dialog-line-separator">
                 </div>
@@ -80,7 +84,7 @@
                 
                 
                 
-                <div ng-if="entry.customerEmotion">{{entry.customerEmotion}}</div>
+                <!--  <div ng-if="entry.customerEmotion">{{entry.customerEmotion}}</div> -->
                 
                 
                 
