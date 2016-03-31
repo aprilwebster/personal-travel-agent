@@ -46,6 +46,7 @@ public class GoogleMapsProxyResource{
     private static final String LONGITUDE = "lng";
     private static final String OPENING_HOURS = "opening_hours";
     private static final String STORE_NAME = "name";
+    private static final String PLACE_ID = "place_id";
     private static final String OPEN_NOW = "open_now";
     private static final String WEEKDAY_HOURS = "weekday_text";
     
@@ -315,6 +316,7 @@ public class GoogleMapsProxyResource{
 		    Double lng = (Double)location.get((Object)LONGITUDE);
 		    String address = (String) results.get((Object) ADDRESS);
 		    String name = (String) results.get((Object) STORE_NAME);
+		    String place_id = (String) results.get((Object) PLACE_ID);
 		    //JSONObject opening_hours = (JSONObject) results.get((Object) OPENING_HOURS);
 		    //Boolean open_now = (Boolean) opening_hours.get((Object) OPEN_NOW);
 		    
@@ -322,10 +324,12 @@ public class GoogleMapsProxyResource{
 		    output.put("lng", lng);
 		    output.put("address", address);
 		    output.put("name", name);
+		    output.put("place_id", place_id);
 		    
 		    if(DEBUG){
 				System.out.println("DEBUG GoogleMapsProxyResource: location is " + location.toString());
 				System.out.println("DEBUG GoogleMapsProxyResource: address is " + address.toString());
+				System.out.println("DEBUG GoogleMapsProxyResource: place id is " + place_id);
 				//System.out.println("DEBUG GoogleMapsProxyResource: opening hours is " + opening_hours.toString());
 				//System.out.println("DEBUG GoogleMapsProxyResource: open now is " + open_now.toString());
 		    }else{

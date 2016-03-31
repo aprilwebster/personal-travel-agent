@@ -77,22 +77,7 @@
                         </div>
                     </div><hr class="dialog-line-separator">
                 </div>
-                
-                
-                
-                
-                
-                
-                
-                <!--  <div ng-if="entry.customerEmotion">{{entry.customerEmotion}}</div> -->
-                
-                
-                
-                
-                
-                
-                
-                
+
                <!--  <div ng-if="entry.options" style="padding-right: 0px;padding-top: 40px;" class="dialog-user-row-{{dialogCtrl.customerEmotion}} dialog-white-bg">
                  --> 
                 <div ng-if="entry.options" style="padding-right: 0px;padding-top: 40px;" class="dialog-user-row dialog-white-bg">
@@ -104,44 +89,12 @@
                 <!--$log.debug("DEBUG dialog-entries.html: TESTING")-->
                 <!-- AW - adapting for stores -->
                 <div ng-if="entry.stores" class="dialog-movie-links-parent">
-                	
-                	<!--  
-                	<div>
-  						<p>Looping with ng-repeat:</p>
-  						<ul>
-					    <li ng-repeat="store in entry.stores">
-					      {{ store }}
-					    </li>
-					  	</ul>
-					</div>
-					
-					<a store class="dialog-movie" content="store" ng-repeat="store in entry.stores" tabindex="1" ng-keypress="keypressed($event)">{{ store }}</a>
-                    -->
+
                     <a store class="dialog-movie" content="store" ng-repeat="store in entry.stores" tabindex="1" ng-keypress="keypressed($event)"></a>
                 </div>
-                
-                <!-- ORIGINAL - if movies are returned, display them after the Watson response -->
-				<!--
-                <div ng-if="entry.movies" class="dialog-movie-links-parent">
-                    <a movie class="dialog-movie" content="movie" ng-repeat="movie in entry.movies" tabindex="1" ng-keypress="keypressed($event)"></a>
-                </div>
-                -->
-                
+
             </div>
-            
-            
-            
-            <!-- If Watson makes a comment on the selected movie, show it here -->
-            <!-- This div must be outside the repeat as we only want to add it to the last conversation segment -->
-            <!--  
-            <div ng-if="dialogCtrl.selectedMovie && dialogCtrl.selectedMovie.commentary" class="dialog-entry row">
-                <div class="dialog-watson-row">
-                    <div class="dialog-segment-bkg">
-                        <span class="dialog-row-text" ng-bind-html="dialogCtrl.selectedMovie.commentary"></span>
-                    </div>
-                </div>
-            </div>
-            -->
+
         </div>
     </div>
 </section>

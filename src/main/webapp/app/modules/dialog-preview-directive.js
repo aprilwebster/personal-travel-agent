@@ -31,12 +31,16 @@
      * @param {object}
      *            content - a reference to movie object
      */
-    .directive('preview', function ($parse, $sce) {
+    .directive('preview', function ($parse, $sce, $log) {
         return {
+        	
+        	
         	'template': '<div><span class="dialog-drawer-toggle"></span>' +
                         //'<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
                         '<div class="dialog-preview-scroll">' +
-                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
+                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
+                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=j+crew+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
+                        
                         
                         //+	'<div class="dialog-movie-info-spacing">' +
                         //    	'<div class="dialog-movie-name-rating-spacing"></div>'+

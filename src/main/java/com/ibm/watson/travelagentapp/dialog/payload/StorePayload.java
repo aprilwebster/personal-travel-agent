@@ -32,7 +32,17 @@ public class StorePayload {
     private String id;
     private String name;
     private String address;
-    //private Boolean open_now;
+    //private String placeid;
+    private String googleStoreId;
+    
+    public String getGoogleStoreId() {
+		return googleStoreId;
+	}
+	public void setGoogleStoreId(String google_store_id) {
+		this.googleStoreId = googleStoreId;
+	}
+	
+	//private Boolean open_now;
     //private Integer price_level;
     //private Double rating;
     //private String vicinity;

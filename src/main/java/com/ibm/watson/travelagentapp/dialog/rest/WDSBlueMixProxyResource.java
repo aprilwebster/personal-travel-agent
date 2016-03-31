@@ -469,21 +469,28 @@ public class WDSBlueMixProxyResource {
 		        	String clothingStore = paramsObj.get("Clothing_Store").toString();
 		        	String startingAddress = paramsObj.get("Current_Address").toString();
 	                System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store requested. Clothing store preference is " + clothingStore);
-	                
+	                clothingStore = clothingStore.replace("\"", "");
+	                System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: top 5 clothing store string from WDS is " + clothingStore);
 	                
 	                List<String> top5Stores = new ArrayList<String>(Arrays.asList(clothingStore.split(",")));
-	                top5Stores = new ArrayList<String>();
-	                top5Stores.add("Urban Outfitters");
-	                top5Stores.add("Topshop");
-	                top5Stores.add("American Apparel");
-	                top5Stores.add("J Crew");
-	                top5Stores.add("H & M");
-
+	                System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: top 5 clothing store list is " + top5Stores.toString());
 	                System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: top5Stores as list to string is " + top5Stores.toString());
 	                List<StorePayload> stores = new ArrayList<StorePayload>();
 	                for(int i=0; i < top5Stores.size(); i++){
 	                	StorePayload s = new StorePayload();
-	                	s.setName(top5Stores.get(i));
+	                	String storeName = top5Stores.get(i);
+	                	 Map<String,Object> closestClothingStore = getClosestClothingStoreObject(startingAddress,storeName);
+		                String closestStoreAddress = (String)closestClothingStore.get("address");
+		                String closestStorePlaceId = (String)closestClothingStore.get("place_id");
+		                System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestStoreAddress);
+		                System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store place_id is " + closestStorePlaceId);
+		                String distCurrentLocnToClothingStore = getDistance(startingAddress, closestStoreAddress);
+		                System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
+
+	                	s.setName(storeName);
+	                	s.setAddress(closestStoreAddress);
+	                	s.setId(closestStorePlaceId);
+	                	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: store is " + storeName + ", id is " + closestStorePlaceId +  " and address is " + closestStoreAddress);
 	                	stores.add(i, s);
 	                }
 	                System.out.println(stores);
@@ -576,6 +583,69 @@ public class WDSBlueMixProxyResource {
         return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
     }
     
+
+    @GET
+    @Path("/getSelectedStoreDetails")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSelectedStoreDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
+            @QueryParam("name") String name) throws IOException, HttpException, WatsonTheatersException {
+
+    	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: called with name " + name);
+    	
+        String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
+        String issue = null;
+        WDSConversationPayload conversationPayload = new WDSConversationPayload();
+        try {
+            // Get store info - replace static data with call to Google Maps for details
+            StorePayload store = new StorePayload();
+            store.setName(name);
+            // NEED THE CURRENT ADDRESS FOR THIS!!!
+            // AW - 3/29/16 - need to replace this with a call to Google Maps to get the address!!
+            // Get the closest clothing store - call GoogleMaps api
+            //Map<String,Object> closestClothingStore = getClosestClothingStoreObject(startingAddress,clothingStore);
+            //String closestClothingStoreAddress = (String)closestClothingStore.get("address");
+            //System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestClothingStoreAddress);
+            //String distCurrentLocnToClothingStore = getDistance(startingAddress, closestClothingStoreAddress);
+            //System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
+            
+            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: store address is ");
+            store.setAddress("2855 Stevens Creek Blvd, San Jose, CA");
+            store.setId("1");
+
+            // Set the profile variable for WDS.
+            List<NameValue> nameValues = new ArrayList<NameValue>();
+            nameValues = new ArrayList<NameValue>();
+            nameValues.add(new NameValue("Selected_Store", URLEncoder.encode(name, "UTF-8"))); //$NON-NLS-1$
+            dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
+            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: profile variable Personality_Profile update request sent to WDS");
+                
+
+            // Get the personalized prompt.
+            Map<String, Object> converseParams = new HashMap<String, Object>();
+            converseParams.put("dialog_id", dialog_id);
+            converseParams.put("client_id", Integer.parseInt(clientId));
+            converseParams.put("conversation_id", Integer.parseInt(conversationId));
+            converseParams.put("input", personalized_prompt_store_selected);
+            Conversation conversation = dialogService.converse(converseParams);
+            String wdsMessage = StringUtils.join(conversation.getResponse(), " ");
+
+            // Add the wds personalized prompt to the MoviesPayload and return.
+            //List<StorePayload> storeList = new ArrayList<StorePayload>();
+            // storeList.add(store);
+            //conversationPayload.setStores(storeList);
+            List<StorePayload> stores = new ArrayList<StorePayload>();
+            stores.add(store);
+            conversationPayload.setStores(stores);
+            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: stores added to the payload.  First store is " + conversationPayload.getStores().get(0).getName());
+            conversationPayload.setWdsResponse(wdsMessage);
+            return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
+
+        } catch (IllegalStateException e) {
+            issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
+            UtilityFunctions.logger.error(issue, e);
+        }
+        return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
+    }   
     
     
  private String TwitterAnalyzer(String string) {
@@ -737,65 +807,7 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
     
     
     
-    @GET
-    @Path("/getSelectedStoreDetails")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSelectedStoreDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
-            @QueryParam("name") String name) throws IOException, HttpException, WatsonTheatersException {
 
-    	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: called with name " + name);
-    	
-        String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
-        String issue = null;
-        WDSConversationPayload conversationPayload = new WDSConversationPayload();
-        try {
-            // Get store info - replace static data with call to Google Maps for details
-            StorePayload store = new StorePayload();
-            store.setName(name);
-            // AW - 3/29/16 - need to replace this with a call to Google Maps to get the address!!
-            store.setAddress("2855 Stevens Creek Blvd, San Jose, CA");
-            store.setId("1");
-
-            // Set the profile variable for WDS.
-            //Map<String, String> profile = new HashMap<>();
-            //profile.put("Selected_Store", URLEncoder.encode(name, "UTF-8")); //$NON-NLS-1$ //$NON-NLS-2$
-            //dialogService.updateProfile(dialog_id, new Integer(clientId), (List<NameValue>) profile);
-            List<NameValue> nameValues = new ArrayList<NameValue>();
-            // Issue updateProfile request to the WDS to update the profile variable - Personality Profile - for the client/dialog
-            // TODO: use a better variable name that nameValues - not descriptive at all
-            nameValues = new ArrayList<NameValue>();
-            nameValues.add(new NameValue("Selected_Store", URLEncoder.encode(name, "UTF-8"))); //$NON-NLS-1$
-            dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
-            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: profile variable Personality_Profile update request sent to WDS");
-                
-
-            // Get the personalized prompt.
-            // **************** AW - 3/29/16 IS THIS CORRECT??? - doesn't look like the code in the diff
-            Map<String, Object> converseParams = new HashMap<String, Object>();
-            converseParams.put("dialog_id", dialog_id);
-            converseParams.put("client_id", Integer.parseInt(clientId));
-            converseParams.put("conversation_id", Integer.parseInt(conversationId));
-            converseParams.put("input", personalized_prompt_store_selected);
-            Conversation conversation = dialogService.converse(converseParams);
-            String wdsMessage = StringUtils.join(conversation.getResponse(), " ");
-
-            // Add the wds personalized prompt to the MoviesPayload and return.
-            //List<StorePayload> storeList = new ArrayList<StorePayload>();
-            // storeList.add(store);
-            //conversationPayload.setStores(storeList);
-            List<StorePayload> stores = new ArrayList<StorePayload>();
-            stores.add(store);
-            conversationPayload.setStores(stores);
-            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: stores added to the payload.  First store is " + conversationPayload.getStores().get(0).getName());
-            conversationPayload.setWdsResponse(wdsMessage);
-            return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
-
-        } catch (IllegalStateException e) {
-            issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
-            UtilityFunctions.logger.error(issue, e);
-        }
-        return Response.serverError().entity(new ServerErrorPayload(errorMessage, issue)).build();
-    }
     
     
     
