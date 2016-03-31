@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -292,19 +293,9 @@ public class WDSBlueMixProxyResource {
         try {
 
             // Get the emotions for the customer's conversation turn
-        	//HashMap customerEmotions = getEmotionMap(input);
-        	//System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is " + customerEmotions.toString());
         	customerEmotion = getEmotion(input);
         	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's primary emotion is " + customerEmotion);
-        	
-        	
-        	/*
-        	if(customerEmotions == null){
-        		System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: customer's emotion vector is null");
-        	}
-        	*/
-        	
-        	
+
         	Map<String, Object> converseParams = createConversationParameterMap(dialog_id,
             		Integer.parseInt(clientId),Integer.parseInt(conversationId),input);
             Conversation conversation = dialogService.converse(converseParams);
@@ -321,6 +312,7 @@ public class WDSBlueMixProxyResource {
             String wds = processedText.get("WDSMessage").toString();
             String cleanedWds = wds.replace("\"", "");
             
+           
             // Watson's emotion vector is not required; just the customer's
             /*
             if (!cleanedWds.trim().isEmpty()) {
@@ -331,22 +323,17 @@ public class WDSBlueMixProxyResource {
             }
             */
             
-            
-            
+
             WDSConversationPayload conversationPayload = new WDSConversationPayload();
             
             
             if (!processedText.has("Params")) {
-            //if (!processedText.containsKey("Params")) {
-                // We do not have enough info to search the movie db, go back to the user for more info.
-
+ 
             	conversationPayload.setClientId(clientId); //$NON-NLS-1$
                 conversationPayload.setConversationId(clientId); //$NON-NLS-1$
                 conversationPayload.setInput(input); //$NON-NLS-1$
                 conversationPayload.setEmotion(customerEmotion); //$NON-NLS-1$
-                conversationPayload.setWdsResponse(processedText.get("WDSMessage").getAsString()); //$NON-NLS-1$
-                
-                //conversationPayload.setWdsResponse(processedText.get("WDSMessage").toString()); //$NON-NLS-1$
+                conversationPayload.setWdsResponse(processedText.get("WDSMessage").getAsString()); 
                 
                 if (UtilityFunctions.logger.isTraceEnabled()) {
                     // Log the execution time.
@@ -431,11 +418,25 @@ public class WDSBlueMixProxyResource {
 	                // NEW - find the top five matching stores
 	                ArrayList<String> top5Stores = new Similarity().getTopNMatchingStores(personalityProfile, 5);
 	                System.out.println(top5Stores);
+	                String top5StoresString = StringUtils.join(top5Stores, ',');
 	                
+	                /*
+	                List<StorePayload> stores = new ArrayList<StorePayload>();
+	                for(int i=0; i < top5Stores.size(); i++){
+	                	StorePayload s = new StorePayload();
+	                	s.setName(top5Stores.get(i));
+	                	stores.add(i, s);
+	                }
+	                System.out.println(stores);
+	                */
+	                
+			        
+			        
 			        
 			        // Issue updateProfile request to the WDS to update the profile variable - Clothing_Store_Location - for the client/dialog
 	                nameValues = new ArrayList<NameValue>();
-	                nameValues.add(new NameValue("Clothing_Store_Preference", matchingStore)); //$NON-NLS-1$
+	                //nameValues.add(new NameValue("Clothing_Store_Preference", matchingStore)); //$NON-NLS-1$
+	                nameValues.add(new NameValue("Clothing_Store_Preference", top5StoresString));
 	                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
 	                System.out.println("DEBUG: after call to dialogService");
 	                
@@ -451,6 +452,7 @@ public class WDSBlueMixProxyResource {
 	                conversationPayload.setWdsResponse(wdsMessage);
 	                conversationPayload.setClientId(clientId); 
 	                conversationPayload.setConversationId(clientId); 
+	                //conversationPayload.setStores(stores);
 	                conversationPayload.setEmotion(customerEmotion);
 	                conversationPayload.setInput(input); 
 	
@@ -469,28 +471,47 @@ public class WDSBlueMixProxyResource {
 	                System.out.println("DEBUG WDSBlueMixProxyResource: closest clothing store requested. Clothing store preference is " + clothingStore);
 	                
 	                
+	                List<String> top5Stores = new ArrayList<String>(Arrays.asList(clothingStore.split(",")));
+	                top5Stores = new ArrayList<String>();
+	                top5Stores.add("Urban Outfitters");
+	                top5Stores.add("Topshop");
+	                top5Stores.add("American Apparel");
+	                top5Stores.add("J Crew");
+	                top5Stores.add("H & M");
+
+	                System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: top5Stores as list to string is " + top5Stores.toString());
+	                List<StorePayload> stores = new ArrayList<StorePayload>();
+	                for(int i=0; i < top5Stores.size(); i++){
+	                	StorePayload s = new StorePayload();
+	                	s.setName(top5Stores.get(i));
+	                	stores.add(i, s);
+	                }
+	                System.out.println(stores);
+	                
+	                
 	                // Get the closest clothing store - call GoogleMaps api
-	                Map<String,Object> closestClothingStore = getClosestClothingStoreObject(startingAddress,clothingStore);
-	                String closestClothingStoreAddress = (String)closestClothingStore.get("address");
-	                System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestClothingStoreAddress);
-	                String distCurrentLocnToClothingStore = getDistance(startingAddress, closestClothingStoreAddress);
-	                System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
+	                //Map<String,Object> closestClothingStore = getClosestClothingStoreObject(startingAddress,clothingStore);
+	                //String closestClothingStoreAddress = (String)closestClothingStore.get("address");
+	                //System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestClothingStoreAddress);
+	                //String distCurrentLocnToClothingStore = getDistance(startingAddress, closestClothingStoreAddress);
+	                //System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
 	                
 	                
 	                
-	                
+	                /*
 	                Map<String,Object> closestGroceryStoreObject = getClosestGroceryStoreAddress(closestClothingStoreAddress);
 	                String groceryStoreName = (String)closestGroceryStoreObject.get("name");
 	                String groceryStoreAddress = (String)closestGroceryStoreObject.get("address");
 	                System.out.println("DEBUG WDSBlueMixProxyResource: closest grocery store is " + groceryStoreName + " and is located at " + groceryStoreAddress);
-	                
+	                */
 	                
 	                // Tell WDS to update the profile with the included profile variable values
 	                nameValues = new ArrayList<NameValue>();
-	                nameValues.add(new NameValue("Clothing_Store_Location", closestClothingStoreAddress)); //$NON-NLS-1$
-	                nameValues.add(new NameValue("Clothing_Store_Distance", distCurrentLocnToClothingStore));
-	                nameValues.add(new NameValue("Grocery_Store_Name", groceryStoreName));
-	                nameValues.add(new NameValue("Grocery_Store_Address", groceryStoreAddress));
+	                //nameValues.add(new NameValue("Clothing_Store_Location", closestClothingStoreAddress)); //$NON-NLS-1$
+	                //nameValues.add(new NameValue("Clothing_Store_Distance", distCurrentLocnToClothingStore));
+	                //nameValues.add(new NameValue("Grocery_Store_Name", groceryStoreName));
+	                //nameValues.add(new NameValue("Grocery_Store_Address", groceryStoreAddress));
+	                nameValues.add(new NameValue("Clothing_Store_Location", "placeholder - fix this"));
 	                dialogService.updateProfile(dialog_id, Integer.parseInt(clientId), nameValues);
 	                System.out.println("DEBUG WDSBlueMixProxyResource: after call to dialogService");
 	                
@@ -506,7 +527,7 @@ public class WDSBlueMixProxyResource {
 	                //ArrayList<String> top5Stores = new Similarity().getTopNMatchingStores(personalityProfile, 5);
 	                //System.out.println(top5Stores);
 	                
-	                
+	                /*
 	                List<StorePayload> stores = new ArrayList<>();
 	                StorePayload s1 = new StorePayload();
 	                s1.setId("1");
@@ -524,7 +545,7 @@ public class WDSBlueMixProxyResource {
 	                System.out.println("DEBUG WDSBlueMixProxyResource: stores payload is " + storesList);
 	                System.out.println("DEBUG WDSBlueMixProxyResource: what is going on???");
 	                System.out.println("DEBUG WDSBlueMixProxyResource: 1st store is " + storesList.get(0).getName());
-	                
+	                */
 	                
 	                // Build the payload - wdsResponse?
 	                conversationPayload.setWdsResponse(wdsMessage);
@@ -532,7 +553,8 @@ public class WDSBlueMixProxyResource {
 	                conversationPayload.setConversationId(clientId); 
 	                System.out.println("DEBUG WDSBlueMixProxyResource: clientId is " + conversationPayload.getClientId());
 	                conversationPayload.setInput(input); 
-	                conversationPayload.setStores(storesList);
+	                //conversationPayload.setStores(storesList);
+	                conversationPayload.setStores(stores);
 	                conversationPayload.setEmotion(customerEmotion);
 	                System.out.println("DEBUG WDSBlueMixProxyResource: 1st store is " + conversationPayload.getStores().get(0).getName());
 	

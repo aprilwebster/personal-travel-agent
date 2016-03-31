@@ -142,10 +142,7 @@
                     //inconsistencies in the API and how it handles new lines
                     watsonResponse = watsonResponse.replace(/\n+/g, '<br/>');
                 }
-                /*if ($.isArray(response.data.movies)) {
-                    movies = response.data.movies;
-                    $log.debug('DEBUG dialog-service.getResponse: the response has movies');
-                }*/
+
                 if ($.isArray(response.data.stores)) {
                     stores = response.data.stores;
                     $log.debug('DEBUG dialog-service.getResponse: the response has stores');
