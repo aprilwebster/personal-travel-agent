@@ -16,13 +16,17 @@
 package com.ibm.watson.travelagentapp.dialog.rest;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.ws.rs.GET;
@@ -37,12 +41,22 @@ import javax.ws.rs.core.Response;
 import com.ibm.watson.travelagentapp.webservices.googlemaps.GoogleMapsProxyResource;
 import com.ibm.watson.travelagentapp.utilities.Similarity;
 import com.ibm.watson.travelagentapp.webservices.twitter.TwitterAnalyzer;
+import com.ibm.watson.travelagentapp.webservices.watson.WatsonDialogServiceProxyResource;
 import com.ibm.watson.travelagentapp.webservices.watson.WatsonEmotionServiceProxyResource;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.google.gson.JsonArray;
@@ -97,6 +111,10 @@ public class WDSBlueMixProxyResource {
     private static String personalized_prompt_store_selected = "USER CLICKS STORE"; //$NON-NLS-1$
     private static String personalized_prompt_movies_returned = "UPDATE NUM_MOVIES"; //$NON-NLS-1$
     
+    private static final String WATSON_BASE_URL = "gateway.watsonplatform.net/";
+	private static final String WATSON_DIALOG_URL = "dialog/api/v1/dialogs/";
+    private static final String GET_PROFILE_VARIABLES_URL = "/profile";
+    
     private static Boolean DEBUG = true;
     
     
@@ -141,10 +159,9 @@ public class WDSBlueMixProxyResource {
         envServices = System.getenv("DIALOG_ID"); //$NON-NLS-1$
         if (envServices != null) {
             dialog_id = envServices;
-            //UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_SUCCESS")); //$NON-NLS-1$
+            UtilityFunctions.logger.info(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_SUCCESS")); //$NON-NLS-1$
         } else {
-            //UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_FAIL")); //$NON-NLS-1$
-            System.out.println("DEBUG - error getting credentials");
+            UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_ACCOUNT_ID_FAIL")); //$NON-NLS-1$
         }
 
     }
@@ -158,11 +175,12 @@ public class WDSBlueMixProxyResource {
             dialogService.setUsernameAndPassword(username_dialog, password_dialog);
             dialogService.setEndPoint(wds_base_url);
         }else{
-            //UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_CREDENTIALS_EMPTY"));
-        	System.out.println("DEBUG - error getting credentials");
+            UtilityFunctions.logger.error(Messages.getString("WDSBlueMixProxyResource.DIALOG_CREDENTIALS_EMPTY"));
        }
     }
 
+    
+    
     /**
      * Checks and extracts movie parameters sent by WDS
      * <p>
@@ -174,71 +192,41 @@ public class WDSBlueMixProxyResource {
      * @throws org.json.simple.parser.ParseException 
      */
     public JsonObject matchSearchNowPattern(String wdsResponseText) throws org.json.simple.parser.ParseException {
-        
-        // If WDS wants us to search themoviedb then it will return a JSON
-        // payload within the response. Quickly check the response for a specific token
-    	//int idx = wdsResponseText.toLowerCase().indexOf("{search_now:"); //$NON-NLS-1$
+
         int idx = wdsResponseText.toLowerCase().indexOf("{\"search_now\":"); //$NON-NLS-1$
-        
-        //String testText = wdsResponseText;
-        //System.out.println("DEBUG matchSearchNowPattern: " + testText);
-        //testText.replaceAll(" How can I help you?", "");
-        //System.out.println("DEBUG matchSearchNowPattern: " + testText);
-        
-        /*
-        Pattern pattern = Pattern.compile("How can I help you?");
-        Matcher matcher = pattern.matcher(wdsResponseText);
-        if (matcher.find())
-        {
-            System.out.println(matcher.group(0));
-        }
-        */
-        //JSONObject result = new JSONObject();
+
         JsonObject result = new JsonObject();
         if (idx != -1) {
             // token exists, parse out some extra chars from dialog.
             String jsonString = wdsResponseText.substring(idx).trim();
             wdsResponseText = wdsResponseText.substring(0, idx - 1).trim();
-            if (jsonString.startsWith("\"")) { //$NON-NLS-1$
+            if (jsonString.startsWith("\"")) { 
             	jsonString = jsonString.substring(0);
             }
-            if (jsonString.endsWith("\"")) { //$NON-NLS-1$
+            if (jsonString.endsWith("\"")) { 
             	jsonString = jsonString.substring(0, jsonString.length() - 1);
             }
-            System.out.println("DEBUG matchSearchPatternNow: wds response is " + jsonString);
-            System.out.println("DEBUG matchSearchPatternNow: wds response type is " + jsonString.getClass().getName());
             
             String trimmedString = jsonString.trim();
-            System.out.println("DEBUG: trimmed String is " + trimmedString);
-            
             String newline = System.getProperty("line.separator");
     		boolean hasNewline = jsonString.contains(newline);
-    		System.out.println("DEBUG PersonalityInsightsHelper: " + hasNewline);
-            
-            
-            //JSONParser parser = new JSONParser();
+    		
+
             JsonParser parser = new JsonParser();
-            
-            //Object obj = parser.parse(jsonString);
-            //System.out.println("DEBUG matchSearchPatternNow: output of Parser parsing jsonString is " + obj.toString());
-            //JsonElement test = (JsonElement)parse.parse(jsonString;)
-            
-
-            
-            //JsonObject jsonObject = (JsonObject) parser.parse(jsonString);
             JsonObject jsonObject = (JsonObject) parser.parse(trimmedString);
+            
             System.out.println("DEBUG matchSearchPatternNow: " + jsonObject.toString());
-            
+            System.out.println("DEBUG matchSearchPatternNow: wds response is " + jsonString);
+            System.out.println("DEBUG matchSearchPatternNow: wds response type is " + jsonString.getClass().getName());
+            System.out.println("DEBUG: trimmed String is " + trimmedString);
+            System.out.println("DEBUG PersonalityInsightsHelper: " + hasNewline);
             System.out.println(jsonObject.entrySet());
+            
             result.add("Params",jsonObject);
-            
-            
-
-            
+    
         }
         
         result.addProperty("WDSMessage", wdsResponseText); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        //result.put("WDSMessage", wdsResponseText);
         return result;
     }
     
@@ -311,19 +299,6 @@ public class WDSBlueMixProxyResource {
             System.out.println("DEBUG PROCESSED TEXT: " + processedText);
             String wds = processedText.get("WDSMessage").toString();
             String cleanedWds = wds.replace("\"", "");
-            
-           
-            // Watson's emotion vector is not required; just the customer's
-            /*
-            if (!cleanedWds.trim().isEmpty()) {
-            	System.out.println("DEBUG WDSBlueMixProxyResource: wds is " + wds);
-            	System.out.println("DEBUG WDSBlueMixProxyResource: cleaned wds is " + cleanedWds);
-            	Double anger = getAnger(cleanedWds);
-            	System.out.println("DEBUG WDSBlueMixProxyResource.postConversation: ANGER LEVEL in Watson's conversation turn is " + anger.toString());
-            }
-            */
-            
-
             WDSConversationPayload conversationPayload = new WDSConversationPayload();
             
             
@@ -529,30 +504,7 @@ public class WDSBlueMixProxyResource {
 	                converseParams = createConversationParameterMap(dialog_id,Integer.parseInt(clientId),Integer.parseInt(conversationId),prompt);
 	                conversation = dialogService.converse(converseParams);
 	                wdsMessage = StringUtils.join(conversation.getResponse(), " ");
-	
-	                // Build the List<StorePayload> stores to add to the WDSConversationPayload
-	                //ArrayList<String> top5Stores = new Similarity().getTopNMatchingStores(personalityProfile, 5);
-	                //System.out.println(top5Stores);
-	                
-	                /*
-	                List<StorePayload> stores = new ArrayList<>();
-	                StorePayload s1 = new StorePayload();
-	                s1.setId("1");
-	                s1.setName("J Crew");
-	                s1.setAddress("650 Harry Rd, San Jose");
-	                
-	                StorePayload s2 = new StorePayload();
-	                s2.setId("2");
-	                s2.setName("Esprit");
-	                s2.setAddress("505 Cypress Point Drive, Mountain View");
-	                
-	                List<StorePayload> storesList = new ArrayList<>();
-	                storesList.add(s1);
-	                storesList.add(s2);
-	                System.out.println("DEBUG WDSBlueMixProxyResource: stores payload is " + storesList);
-	                System.out.println("DEBUG WDSBlueMixProxyResource: what is going on???");
-	                System.out.println("DEBUG WDSBlueMixProxyResource: 1st store is " + storesList.get(0).getName());
-	                */
+
 	                
 	                // Build the payload - wdsResponse?
 	                conversationPayload.setWdsResponse(wdsMessage);
@@ -588,8 +540,7 @@ public class WDSBlueMixProxyResource {
     @Path("/getSelectedStoreDetails")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSelectedStoreDetails(@QueryParam("clientId") String clientId, @QueryParam("conversationId") String conversationId,
-            @QueryParam("name") String name) throws IOException, HttpException, WatsonTheatersException {
-
+            @QueryParam("name") String name) throws ParseException,IOException, HttpException, WatsonTheatersException {
     	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: called with name " + name);
     	
         String errorMessage = Messages.getString("WDSBlueMixProxyResource.WDS_API_CALL_NOT_EXECUTED"); //$NON-NLS-1$
@@ -608,9 +559,23 @@ public class WDSBlueMixProxyResource {
             //String distCurrentLocnToClothingStore = getDistance(startingAddress, closestClothingStoreAddress);
             //System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
             
-            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: store address is ");
-            store.setAddress("2855 Stevens Creek Blvd, San Jose, CA");
-            store.setId("1");
+            //WatsonDialogServiceProxyResource wds = new WatsonDialogServiceProxyResource();
+
+            String currentAddress = null;
+        	List<NameValue> test = dialogService.getProfile(dialog_id, Integer.parseInt(clientId));
+        	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: profile variables are" + test);
+        	for (ListIterator<NameValue> iter = test.listIterator(); iter.hasNext(); ) {
+        		NameValue element = iter.next();
+        		String elementName = element.getName();
+        		String elementValue = element.getValue();
+        		System.out.println("name: " + elementName + ", value: " + elementValue);
+        		if (elementName.equals("Current_Address")) {
+        			currentAddress = elementValue;
+        		}
+        	}
+        	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: current address is " + currentAddress);
+            store.setAddress(currentAddress);
+            //store.setId("1");
 
             // Set the profile variable for WDS.
             List<NameValue> nameValues = new ArrayList<NameValue>();
@@ -653,6 +618,9 @@ public class WDSBlueMixProxyResource {
 		return null;
 	}
 
+
+ 
+ 
  
  private static Double getAnger(String text) throws ClientProtocolException, IOException, org.json.simple.parser.ParseException, URISyntaxException {
 
@@ -927,6 +895,10 @@ private void createConversationParameters(String dialog_id2, int parseInt) {
             nameValues.add(new NameValue("First_Time", "No"));
             dialogService.updateProfile(dialog_id, conversation.getClientId(), nameValues);
         }
+        
+        System.out.println("DEBUG WDSBlueMixProxyResource.initChat: clientID = " + conversation.getClientId());
+        System.out.println("DEBUG WDSBlueMixProxyResource.initChat: conversationID = " + conversation.getId());
+        System.out.println("DEBUG WDSBlueMixProxyResource.initChat: input = " + conversation.getInput());
         WDSConversationPayload conversationPayload = new WDSConversationPayload();
         conversationPayload.setClientId(Integer.toString(conversation.getClientId())); //$NON-NLS-1$
         conversationPayload.setConversationId(Integer.toString(conversation.getId())); //$NON-NLS-1$
