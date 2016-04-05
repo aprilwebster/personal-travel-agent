@@ -41,7 +41,6 @@ import javax.ws.rs.core.Response;
 import com.ibm.watson.travelagentapp.webservices.googlemaps.GoogleMapsProxyResource;
 import com.ibm.watson.travelagentapp.utilities.Similarity;
 import com.ibm.watson.travelagentapp.webservices.twitter.TwitterAnalyzer;
-import com.ibm.watson.travelagentapp.webservices.watson.WatsonDialogServiceProxyResource;
 import com.ibm.watson.travelagentapp.webservices.watson.WatsonEmotionServiceProxyResource;
 
 
@@ -575,6 +574,7 @@ public class WDSBlueMixProxyResource {
         	}
         	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: current address is " + currentAddress);
             store.setAddress(currentAddress);
+            store.setMapURL("https://www.google.com/maps/embed/v1/search?q=j+crew+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8");
             //store.setId("1");
 
             // Set the profile variable for WDS.

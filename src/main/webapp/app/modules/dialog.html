@@ -31,6 +31,22 @@
             </div>
         </div>
     </header>
+    
+    <!--  "https://www.google.com/maps/embed/v1/search?q=" + dialogCtrl.getCurrentStore().name + "+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8";;
+	-->
+    <!--
+    <script>
+    document.getElementById('trailerIFrame').src = 
+    	<!--"https://www.google.com/maps/embed/v1/search?q=urban+outfitters+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8";;
+    	
+    	"https://www.google.com/maps/embed/v1/search?q=" + {{dialogCtrl.selectedStore.name}} + "+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8";;
+    	
+    	"https://www.google.com/maps/embed/v1/search?q=urban+outfitters+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8";
+    	
+    	
+    </script>
+      -->
+      
     <!-- The area where the conversation is displayed. This is the scrollable div as opposed to the body-->
     <div class="dialog-scrollable-div" id="scrollable-div" ng-if="dialogCtrl.state.key !== 'intro'" resize>
         <div class="container dialog-container-{{dialogCtrl.state.class}}">
@@ -48,13 +64,19 @@
         
     </div>
     <!--RIGHT PANEL Preview control-->
+    
+    <!--
+    <div id="preview-parent" class="dialog-preview-parent" ng-bind-html='selectedStore' ng-if="dialogCtrl.getCurrentStore() && dialogCtrl.getCurrentStore().name != null"> 
+ 	-->	
      
      <div id="preview-parent" class="dialog-preview-parent" ng-if="dialogCtrl.getCurrentStore() && dialogCtrl.getCurrentStore().name != null"> 
  		<!--
         <iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.youtube.com/embed/nIGtF3J5kn8?controls=0&amp;amp;showinfo=0"></iframe>
         <iframe width="600" height="450" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/search?q=j%20crew%20near%20505%20cypress%20point%20drive%20mountain%20view%20ca&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8" allowfullscreen></iframe>
-        <iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=j%20crew%20near%20505%20cypress%20point%20drive%20mountain%20view%20ca&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>
+        <iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=esprit+near+505+cypress+point+drive+mountain+view+ca&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>
+        
         -->
+        <iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=urban+outfitters+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>
         <preview class="dialog-preview" content="dialogCtrl.selectedStore"></preview>
      </div>
     

@@ -29,7 +29,7 @@
      * - favorites  When in small resolutions the favorites panel is displayed
      *
      */
-    var DialogController = function (_, $rootScope, $scope, $location, $anchorScroll, $timeout, $log, gettextCatalog, dialogService) {
+    var DialogController = function (_, $rootScope, $scope, $location, $anchorScroll, $timeout, $log, $compile, gettextCatalog, dialogService) {
         var self = this;
         var placeholderText = null;
         var states = {
@@ -72,7 +72,17 @@
         self.selectedStore = {};
         self.selectedStores = [];
         self.customerEmotion = '';
+        
+        
+        
+        
+        
+        //self.map = $compile('<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q={{selectedStore.name}}+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>')($scope);
+        
 
+        
+        
+        
         self.isAngry = function () { 
         	$log.debug('DEBUG dialog-controller.isAngry: emotion is anger');
         	return self.emotion === 'angry'; };

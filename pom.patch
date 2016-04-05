@@ -1,0 +1,78 @@
+diff --git a/movieapp-dialog/pom.xml b/movieapp-dialog/pom.xml
+index 16c6b6c..05c1fa4 100644
+--- a/movieapp-dialog/pom.xml
++++ b/movieapp-dialog/pom.xml
+@@ -10,7 +10,8 @@
+     <properties>
+         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+-        <skipITs>false</skipITs>
++        <httpPort>9080</httpPort>
++        <gulp.target>production</gulp.target>
+     </properties>
+ 
+     <repositories>
+@@ -133,7 +134,7 @@
+                         <phase>generate-resources</phase>
+                         <configuration>
+                             <!-- optional: if not specified, it will run gulp's default task (and you can remove this whole <configuration> section.) -->
+-                            <arguments>--target development</arguments>
++                            <arguments>--target ${gulp.target}</arguments>
+                         </configuration>
+                         <!-- configuration omitted, use gulp default -->
+                     </execution>
+@@ -149,7 +150,7 @@
+                     <artifactId>maven-failsafe-plugin</artifactId>
+                     <version>2.18.1</version>
+                     <configuration>
+-                        <skipITs>${skipITs}</skipITs>
++                        <skip>${maven.test.skip}</skip>
+                         <systemPropertyVariables>
+                             <app.url>${app.url}</app.url>
+                             <automation.full.suite>${automation.full.suite}</automation.full.suite>
+@@ -170,7 +171,7 @@
+ 
+             <properties>
+                 <automation.full.suite>false</automation.full.suite>
+-                <app.url>http://localhost:${liberty.http.port}</app.url>
++                <app.url>http://localhost:${httpPort}</app.url>
+             </properties>
+ 
+             <pluginRepositories>
+@@ -224,12 +225,11 @@
+                                 <version>8.5.5_08</version>
+                             </install>
+                             <appArchive>${project.build.directory}/movieapp-dialog.war</appArchive>
+-                            <configFile>${basedir}/src/it/resources/server.xml</configFile>
+-                            <serverEnv>${basedir}/src/it/resources/server.env</serverEnv>
+-                            <skip>${skipITs}</skip>
++                            <configFile>${basedir}/etc/server.xml</configFile>
++                            <serverEnv>${basedir}/etc/server.env</serverEnv>
+                             <bootstrapProperties>
+-                                <!-- Corresponds to a variable reference in src/it/resources/server.xml -->
+-                                <httpPort>${liberty.http.port}</httpPort>
++                                <!-- Corresponds to a variable reference in /server.xml -->
++                                <httpPort>${httpPort}</httpPort>
+                             </bootstrapProperties>
+                         </configuration>
+                         <executions>
+@@ -237,6 +237,9 @@
+                             <execution>
+                                 <id>Start Liberty server and deploy app</id>
+                                 <phase>pre-integration-test</phase>
++                                <configuration>
++                               	    <skip>${maven.test.skip}</skip>
++                                </configuration>
+                                 <goals>
+                                     <goal>start-server</goal>
+                                     <goal>deploy</goal>
+@@ -246,6 +249,9 @@
+                             <execution>
+                                 <id>Undeploy app and stop Liberty server</id>
+                                 <phase>post-integration-test</phase>
++                                <configuration>
++                               	    <skip>${maven.test.skip}</skip>
++                                </configuration>
+                                 <goals>
+                                     <goal>undeploy</goal>
+                                     <goal>stop-server</goal>

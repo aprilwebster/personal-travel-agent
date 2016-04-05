@@ -329,7 +329,7 @@
                 	$log.debug('DEBUG dialog-service.getStoreInfo: data.stores length is ' + data.stores.length);
                     if (data.stores && data.stores.length > 0) {
                         data = data.stores[0];
-                        $log.debug('DEBUG dialog-service.getStoreInfo: store is ' + data.name + '(' + data.id + '): ' + data.address);
+                        $log.debug('DEBUG dialog-service.getStoreInfo: store is ' + data.name + '(' + data.id + '): ' + data.address + ' ' + data.mapURL);
                     }
                     data.commentary = response.data.wdsResponse;
                 }
