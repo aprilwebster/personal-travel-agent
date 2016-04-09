@@ -29,7 +29,7 @@
      * - favorites  When in small resolutions the favorites panel is displayed
      *
      */
-    var DialogController = function (_, $rootScope, $scope, $location, $anchorScroll, $timeout, $log, $compile, gettextCatalog, dialogService) {
+    var DialogController = function (_, $rootScope, $scope, $location, $anchorScroll, $timeout, $log, $compile, $sce, gettextCatalog, dialogService) {
         var self = this;
         var placeholderText = null;
         var states = {
@@ -72,7 +72,7 @@
         self.selectedStore = {};
         self.selectedStores = [];
         self.customerEmotion = '';
-        
+        self.selectedStoreMapUrl = '';
         
         
         
@@ -99,6 +99,7 @@
             var query = null;
             var scrollable = null;
             var name = null;
+            var mapurl = null;
             //$log.debug('DEBUG dialog-controller: in selectStore function. name is ' + name);
             
             if (store) {
@@ -166,6 +167,13 @@
                     	$log.debug('DEBUG dialog-controller.selectStore: id is ' + segment.id);
                     	$log.debug('DEBUG dialog-controller.selectStore: store name from self.selectedStore is ' + self.selectedStore.name);
                         self.selectedStores.push(segment);
+                        
+                        //April 7 - trying to get map to work
+                        mapurl = $sce.trustAsResourceUrl('https://www.google.com/maps/embed/v1/search?q=' + segment.name.replace(' ', '+') + '+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8');
+                        $log.debug('DEBUG dialog-controller.selectStore: store map url from mapurl is ' + mapurl);
+                        self.selectedStoreMapUrl = mapurl;
+                        $log.debug('DEBUG dialog-controller.selectStore: store map url from self.selectedStore is ' + self.selectedStoreMapUrl);
+                        
                     }
                     $('#scrollable-div').animate({ 'scrollTop': $('#scrollable-div')[0].scrollHeight }, 1000);
                     //Reduce space between chat box and chat messages
@@ -271,11 +279,23 @@
          *
          */
      
+        /*
         self.clearMovieSelection = function () {
             var objKeys = _.keys(self.selectedMovie);
             if (objKeys) {
                 objKeys.forEach(function (objKey) {
                     delete self.selectedMovie[objKey]; //reset selected movie
+                });
+            }
+            setState(states.chatting);
+        };
+        */
+        
+        self.clearStoreSelection = function () {
+            var objKeys = _.keys(self.selectedStore);
+            if (objKeys) {
+                objKeys.forEach(function (objKey) {
+                    delete self.selectedStore[objKey]; //reset selected movie
                 });
             }
             setState(states.chatting);

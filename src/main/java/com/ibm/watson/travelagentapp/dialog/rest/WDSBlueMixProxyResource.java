@@ -114,6 +114,11 @@ public class WDSBlueMixProxyResource {
 	private static final String WATSON_DIALOG_URL = "dialog/api/v1/dialogs/";
     private static final String GET_PROFILE_VARIABLES_URL = "/profile";
     
+    private static final String GOOGLE_MAPS_EMBED_BASE_URL = "https://www.google.com/maps/embed/v1/";
+    private static final String GOOGLE_MAPS_EMBED_DIRECTIONS_ENDPOINT = "directions";
+    private static final String GOOGLE_MAPS_EMBED_SEARCH_ENDPOINT = "search";
+    private static final String GOOGLE_MAPS_EMBED_API_KEY = "AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8";
+    
     private static Boolean DEBUG = true;
     
     
@@ -318,7 +323,7 @@ public class WDSBlueMixProxyResource {
                 return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
             } 
             
-            // Query requred
+            // Query required
             else {
                 // Extract the query parameters from the processed WDS Response
                 JsonObject paramsObj = processedText.getAsJsonObject("Params"); 
@@ -546,20 +551,11 @@ public class WDSBlueMixProxyResource {
         String issue = null;
         WDSConversationPayload conversationPayload = new WDSConversationPayload();
         try {
-            // Get store info - replace static data with call to Google Maps for details
+
             StorePayload store = new StorePayload();
             store.setName(name);
-            // NEED THE CURRENT ADDRESS FOR THIS!!!
-            // AW - 3/29/16 - need to replace this with a call to Google Maps to get the address!!
-            // Get the closest clothing store - call GoogleMaps api
-            //Map<String,Object> closestClothingStore = getClosestClothingStoreObject(startingAddress,clothingStore);
-            //String closestClothingStoreAddress = (String)closestClothingStore.get("address");
-            //System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestClothingStoreAddress);
-            //String distCurrentLocnToClothingStore = getDistance(startingAddress, closestClothingStoreAddress);
-            //System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
-            
-            //WatsonDialogServiceProxyResource wds = new WatsonDialogServiceProxyResource();
 
+            // Get customer's current address - persisted on the Watson Dialog Server
             String currentAddress = null;
         	List<NameValue> test = dialogService.getProfile(dialog_id, Integer.parseInt(clientId));
         	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: profile variables are" + test);
@@ -573,9 +569,30 @@ public class WDSBlueMixProxyResource {
         		}
         	}
         	System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: current address is " + currentAddress);
-            store.setAddress(currentAddress);
-            store.setMapURL("https://www.google.com/maps/embed/v1/search?q=j+crew+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8");
+            //store.setAddress(currentAddress);
+            
+            
+            // Get the address of the closest clothing store
+            Map<String,Object> closestClothingStore = getClosestClothingStoreObject(currentAddress,name);
+            String closestStoreAddress = (String)closestClothingStore.get("address");
+            System.out.println("DEBUG WDSBlueMixProxyResource: closest Clothing Store is located at " + closestStoreAddress);
+            
+            //String distCurrentLocnToClothingStore = getDistance(currentAddress, closestClothingStoreAddress);
+            //System.out.println("DEBUG WDSBlueMixProxyResource: distance to the closest Clothing Store is " + distCurrentLocnToClothingStore);
+            
+            
+            //store.setMapURL("https://www.google.com/maps/embed/v1/search?q=j+crew+near+505+Cypress+Point+Drive+Mountain+View&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8");
             //store.setId("1");
+            
+            // Create and set the Google mapurl that provides directions from the currentAddress to the closestStoreAddress
+            String mapUrl = "https://www.google.com/maps/embed/v1/directions?" 
+            		+ "key=" + GOOGLE_MAPS_EMBED_API_KEY  
+            		+ "&origin=" + URLEncoder.encode(currentAddress, "UTF-8")
+            		+ "&destination=" + URLEncoder.encode(store.getName(), "UTF-8") + " @"+ URLEncoder.encode(closestStoreAddress, "UTF-8"); //$NON-NLS-1$ //$NON-NLS-2$
+            		//+ "&destination=" + URLEncoder.encode(closestStoreAddress, "UTF-8"); //$NON-NLS-1$ //$NON-NLS-2$
+            store.setMapUrl(mapUrl);
+            System.out.println("DEBUG WDSBlueMixProxyResource.getSelectedStoreDetails: mapurl is " + store.getMapUrl());
+            
 
             // Set the profile variable for WDS.
             List<NameValue> nameValues = new ArrayList<NameValue>();
@@ -605,7 +622,7 @@ public class WDSBlueMixProxyResource {
             conversationPayload.setWdsResponse(wdsMessage);
             return Response.ok(conversationPayload, MediaType.APPLICATION_JSON_TYPE).build();
 
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | URISyntaxException e) {
             issue = Messages.getString("WDSBlueMixProxyResource.ILLEGAL_STATE_EXCEPTION_GET_RESPONSE"); //$NON-NLS-1$
             UtilityFunctions.logger.error(issue, e);
         }

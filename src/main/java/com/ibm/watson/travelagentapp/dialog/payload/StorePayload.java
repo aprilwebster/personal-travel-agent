@@ -34,19 +34,23 @@ public class StorePayload {
     private String address;
     //private String placeid;
     private String googleStoreId;
-    private String mapURL;
+    private String mapUrl;
     
-    public String getMapURL() {
-		return mapURL;
+    public String getMapUrl() {
+		return mapUrl;
 	}
-	public void setMapURL(String mapURL) {
-		this.mapURL = mapURL;
+	public void setMapUrl(String mapUrl) {
+		this.mapUrl = mapUrl;
 	}
 	public String getGoogleStoreId() {
 		return googleStoreId;
 	}
 	public void setGoogleStoreId(String google_store_id) {
 		this.googleStoreId = googleStoreId;
+	}
+	
+	public void createMapUrl(String mode, String origin, String destination) {
+		
 	}
 	
 	//private Boolean open_now;

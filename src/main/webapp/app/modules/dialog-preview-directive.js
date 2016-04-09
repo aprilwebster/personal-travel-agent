@@ -40,13 +40,20 @@
         	
         	'template': '<div><span class="dialog-drawer-toggle"></span>' +
                         //'<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
-                        '<div class="dialog-preview-scroll">',
+                        '<div class="dialog-preview-scroll">'+
                         //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
                         //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=' + 'j+crew' + '+near+505+Cypress+Point+Drive+Mountain+View' + '&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
                         //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src=store.mapURL></iframe>', 
                         //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=j+crew+near+' + test.address + '&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
                         
+                        // this works
+                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8&origin=505+cypress+point+drive+mountain+view&destination=2400+Forest+Ave%2C+San+Jose"></iframe>', 
                         
+                        // this works, except for Topshop - it doesn't show the name in the destination...
+                        '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src={{trustedUrl}}></iframe>', 
+                        
+                        // this still doesn't work for Topshop - why?
+                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src=https://www.google.com/maps/embed/v1/directions?key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8&origin=250+castro+street+mountain+view&destination=Topshop+@2400+Forest+Ave%2C+San+Jose"></iframe>', 
                         
                         //+	'<div class="dialog-movie-info-spacing">' +
                         //    	'<div class="dialog-movie-name-rating-spacing"></div>'+
@@ -92,7 +99,8 @@
 
                 closeButton = $('.dialog-drawer-toggle');
                 closeButton.bind('touchstart click', function (e) {
-                    scope.$apply(scope.dialogCtrl.clearMovieSelection());
+                    //scope.$apply(scope.dialogCtrl.clearMovieSelection());
+                    scope.$apply(scope.dialogCtrl.clearStoreSelection());
                     $(window).off('resize', resizeContents);
                     e.preventDefault();
                     e.stopPropagation();
@@ -102,7 +110,7 @@
                 scope.$watch(function () {
                     return scope.dialogCtrl.getCurrentStore();
                 }, function () {
-                    //var url = null;
+                    var trustedUrl = null;
                     //var movie = $parse(attr.content)(scope);
                 	var store = $parse(attr.content)(scope);
                 	var address = null;
@@ -118,6 +126,18 @@
                     }
                     else {
                     	scope.address = null;
+                    }
+                    
+                    if (store.mapUrl) {
+                        trustedUrl = $sce.trustAsResourceUrl(store.mapUrl);
+                        scope.trustedUrl = trustedUrl;
+                        iframe.removeClass('dialog-trailer-hidden');
+                        div.addClass('dialog-trailer-hidden');
+                    }
+                    else {
+                        scope.trustedUrl = null;
+                        iframe.addClass('dialog-trailer-hidden');
+                        div.removeClass('dialog-trailer-hidden');
                     }
                     
                     resizeContents();
