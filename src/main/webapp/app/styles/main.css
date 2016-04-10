@@ -1238,6 +1238,7 @@ html, body {
     font-family: "MyriadPro-Regular";
 }
 
+// Decreased the size of this bar
 .dialog-drawer-toggle {
     height: 30px;
     width: 30px;

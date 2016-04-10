@@ -32,46 +32,14 @@
      *            content - a reference to movie object
      */
     .directive('preview', function ($parse, $sce, $log) {
-    	
-    	//var test = $parse(attr.content)(scope);
+
         return {
-        	
-        	 
-        	
         	'template': '<div><span class="dialog-drawer-toggle"></span>' +
-                        //'<favorite class="dialog-favorite-sm" content="{{store}}"></favorite>' +
                         '<div class="dialog-preview-scroll">'+
-                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/place?q=place_id:ChIJY6dkgDO7j4ARDxWs4SyOIVU&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
-                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=' + 'j+crew' + '+near+505+Cypress+Point+Drive+Mountain+View' + '&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
-                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src=store.mapURL></iframe>', 
-                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/search?q=j+crew+near+' + test.address + '&key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8"></iframe>', 
-                        
-                        // this works
-                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8&origin=505+cypress+point+drive+mountain+view&destination=2400+Forest+Ave%2C+San+Jose"></iframe>', 
-                        
-                        // this works, except for Topshop - it doesn't show the name in the destination...
                         '<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src={{trustedUrl}}></iframe>', 
                         
-                        // this still doesn't work for Topshop - why?
-                        //'<iframe id="trailerIFrame" class="dialog-trailer" allowfullscreen="true" frameborder="0" src=https://www.google.com/maps/embed/v1/directions?key=AIzaSyB1RD2gilBuJjZPQP500vCZPMoDqGfBav8&origin=250+castro+street+mountain+view&destination=Topshop+@2400+Forest+Ave%2C+San+Jose"></iframe>', 
-                        
-                        //+	'<div class="dialog-movie-info-spacing">' +
-                        //    	'<div class="dialog-movie-name-rating-spacing"></div>'+
-                        //        	'<span class="dialog-movie-name-rating">' +
-                        //            	'<h1 class="dialog-movie-name">DEBUG dialog-preview-directive.js</h1>' +
-                        //                '<h5 class="dialog-movie-name">Store name is {{store.name}}</h5>' +
-                        //                '<h5 class="dialog-movie-name">Address is {{store.address}}</h5>' +
-                        //                '<h5 class="dialog-movie-name">Id is {{store.id}}</h5>' +
-                        //                '<h5 class="dialog-release-label" ng-hide="hideReleaseDate">Release date:' +
-                        //                '<span class="dialog-release-date"> {{store.name}},{{store.address}}</span>' +
-                        //                '</h5>' +
-                        //                '<showtoggle></showtoggle>' +
-                        //                '<div class="dialog-rating-spacing"></div>' + 
-                        //        '</div>' + 
-                        // '</div>'             
             'restrict': 'E',
             'link': function (scope, element, attr) {
-            //'link': function (element) {	
                 var closeButton = null;
                 var resizeContents = function () {
                     var docHeight = $(window).height();
@@ -99,19 +67,16 @@
 
                 closeButton = $('.dialog-drawer-toggle');
                 closeButton.bind('touchstart click', function (e) {
-                    //scope.$apply(scope.dialogCtrl.clearMovieSelection());
                     scope.$apply(scope.dialogCtrl.clearStoreSelection());
                     $(window).off('resize', resizeContents);
                     e.preventDefault();
                     e.stopPropagation();
                 });
                 $(window).resize(resizeContents);
-                //<iframe width="560" height="315" src="https://www.youtube.com/embed/vCqiNF94yDw?controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
                 scope.$watch(function () {
                     return scope.dialogCtrl.getCurrentStore();
                 }, function () {
                     var trustedUrl = null;
-                    //var movie = $parse(attr.content)(scope);
                 	var store = $parse(attr.content)(scope);
                 	var address = null;
                 	var id = null;
