@@ -70,10 +70,13 @@
                 <div ng-class="!entry.responses ? 'watson-thinking' : 'no-class'">
                     <div class="dialog-watson-row" ng-if="entry != null && entry.responses != null">
                         <div class="dialog-segment-bkg">
-                        	
-                            <div class="dialog-row-text" ng-bind-html="entry.responses "></div>
+                        	<!--  <div class="dialog-row-text" ng-bind-html="entry.responses "></div> -->
                             <!--  <div ng-if="entry.customerEmotion==='anger'">I'd be annoyed as well.</div> -->
-                            
+                            <span class="dialog-row-text" ng-if="entry.customerEmotion==='neutral'" >{{entry.responses}}</span>
+                            <span class="dialog-row-text" ng-if="entry.customerEmotion==='anger'" >I'm sorry you're frustrated. {{entry.responses}}</span>
+                            <span class="dialog-row-text" ng-if="entry.customerEmotion==='sadness'" >Cheer up! {{entry.responses}}</span>
+                            <span class="dialog-row-text" ng-if="entry.customerEmotion==='joy'" >Great! {{entry.responses}}</span>
+                            <span class="dialog-row-text" ng-if="entry.customerEmotion==='disgust'" >Ugh, I'm sorry. {{entry.responses}}</span>
                         </div>
                     </div><hr class="dialog-line-separator">
                 </div>
